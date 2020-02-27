@@ -1,25 +1,27 @@
-int fakeDataStore1[200]; 
-int fakeDataStore2[200]; 
-int fakeDataStore3[200]; 
-int fakeDataStore4[200]; 
-int i = 0;
-int m = 200;
+int index = 0;
+int max_index = 200;
 
-void setup() {
-  Serial.begin(9600);
+
+// Given 4 numbers, put them in csv format.
+String toCSV(int a, int b, int c, int d) {
+  return String(a) + "," + String(b) + "," + String(c) + "," + String(d) + "\n";
 }
 
-void loop() {
-  fakeDataStore1[i] = i;
-  fakeDataStore2[i] = i;
-  fakeDataStore3[i] = i;
-  fakeDataStore4[i] = i;
-  i++;
 
-  if (i >= m) {
-    i = 0;
+void setup() {
+  Serial.begin(2000000);
+}
+
+
+void loop() {
+  // Reset the index.
+  if (index > max_index) {
+    index = 0;
   }
   
+  // Send fake data to serial port.
+  // Format: a,b,c,d
+  Serial.print(toCSV(index, index+1, index+2, index+3));
 
-  Serial.print("10000000000\n");
+  index++;
 }
