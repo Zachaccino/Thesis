@@ -37,7 +37,8 @@
             "esp8266.rx": "PC_6",
             "esp8266.rts": "PE_13",
             "esp8266.cts": "PC_8",
-            "esp8266.rst": "PE_12"
+            "esp8266.rst": "PE_12",
+            "storage.storage_type": "TDB_INTERNAL"
         }
     }
 }

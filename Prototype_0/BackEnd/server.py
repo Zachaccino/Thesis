@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 import sqlite3
 import datetime
+import random
+import string
 
 
 app = Flask(__name__)
@@ -26,11 +28,11 @@ class Device(db.Model):
 
     uid = db.Column(db.String(80), primary_key=True)
     name = db.Column(db.String(80), nullable=False)
-    status = db.Column(db.String(80), nullable=False)
-    address = db.Column(db.String(80), nullable=False)
 
     telemetry = db.relationship(Telemetry)
 
+def generate_id(length):
+    return ''.join(random.choice(string.ascii_letters) for i in range(length))
 
 @app.route('/overview')
 def overview():
@@ -42,9 +44,9 @@ def overview():
                                     .filter_by(device_uid=d[0])
                                     .order_by(Telemetry.time.desc())
                                     .limit(5))
-        telemetries[d[0]] = [d for d in res]
+        telemetries[d[0]] = [r for r in res]
     print(telemetries)
-    return 'overview'
+    return str(telemetries)
 
 
 @app.route('/detail')
@@ -66,7 +68,7 @@ def execute():
 @app.route('/add_telemetry', methods=['POST'])
 def add_telemetry():
     data = request.json
-    new_telemetry = Telemetry(device_uid=data["device_uid"],
+    new_telemetry = Telemetry(device_uid=data["uid"],
                                 voltage=float(data["voltage"]),
                                 ampere=float(data["ampere"]))
     db.session.add(new_telemetry)
@@ -77,14 +79,27 @@ def add_telemetry():
 @app.route('/add_device', methods=['POST'])
 def add_device():
     data = request.json
-    new_device = Device(uid=data['uid'],
-                            name=data["device"],
-                            status=data["status"],
-                            address=data['address'])
+    device_exist = db.session.execute(Device.query.filter(Device.uid == data['uid'])).scalar()
+
+    if device_exist:
+        return data['uid'];
+
+    new_uid = data['uid']
+
+    for c in data['uid']:
+        if c not in string.ascii_letters:
+            new_uid = generate_id(16)
+            break
+
+    if len(data['uid']) != 16:
+        new_uid = generate_id(16)
+
+    new_device = Device(uid=new_uid, name=data["device"])
     db.session.add(new_device)
     db.session.commit()
-    return 'add_device'
+
+    return new_uid
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
