@@ -16,6 +16,13 @@ const int value_length = 64;
 // Setup.
 Serial serial(USBTX, USBRX);
 NetworkInterface *iface;
+Thread monitor;
+Thread executor;
+
+// TESTING ONLY.
+float voltage = 5.5;
+float ampere = 2.0;
+Mutex accessRight;
 
 
 // Initialise the Network Interface.
@@ -111,9 +118,15 @@ pair<int, string> add_device(string uid, string device)
 
 pair<int, string> add_telemetry(string uid, double voltage, double ampere)
 {
-    string json = "{\"uid\": \"" + uid + "\",\"voltage\": \"" + to_string(voltage) + "\",\"ampere\": \"" + to_string(ampere) + "\"}";
-    serial.printf("%s\n", json.c_str());
+    string json = "{\"uid\": \"" + uid + "\",\"voltage\":" + to_string(voltage) + ",\"ampere\":" + to_string(ampere) + "}";
+    serial.printf("TELEMETRY SENT: %s\n", json.c_str());
     return send(json.c_str(), HTTP_POST, "http://192.168.1.3:5000/add_telemetry");
+}
+
+pair<int, string> pull_events(string uid)
+{   
+    string json = "{\"uid\": \"" + uid + "\"}";
+    return send(json.c_str(), HTTP_POST, "http://192.168.1.3:5000/pull_events");
 }
 
 // Configure Device.
@@ -138,18 +151,72 @@ void config()
     return;
 }
 
+
 // Debug Purposes
-double rand_voltage()
+double rand_offset()
 {
     double f = (double)rand() / RAND_MAX;
-    return 0 + f * (16 - 0);
+    return -1 + f * (1 + 1);
 }
 
-double rand_ampere()
+
+// Thread Workers
+void executor_thread()
 {
-    double f = (double)rand() / RAND_MAX;
-    return 0 + f * (5 - 0);
+    serial.printf("Executor Thread Started...\n");
+
+    int i = 0;
+    while (i < 30)
+    {
+        accessRight.lock();
+    
+        pair<int, string> res = pull_events(device_uid());
+
+        string raw_cmd = res.second;
+        string delim = ",";
+
+        size_t code_pos = raw_cmd.find(delim);
+        string cmd_code = raw_cmd.substr(0, code_pos);
+        raw_cmd.erase(0, code_pos + delim.length());
+
+        size_t value_pos = raw_cmd.find(delim);
+        string cmd_value = raw_cmd.substr(0, value_pos);
+
+        if (cmd_code == "setVoltage")
+        {
+            voltage = stod(cmd_value);
+        } 
+        else if (cmd_code == "setAmpere")
+        {
+            ampere = stod(cmd_value);
+        }
+        else {
+            serial.printf("NO COMMAND YET.\n");
+        }
+        accessRight.unlock();
+        ThisThread::sleep_for(1000);
+
+        i++;
+    }
 }
+
+void monitor_thread()
+{
+    serial.printf("Monitor Thread Started...\n");
+
+    int i = 0;
+    while (i < 30)
+    {
+        accessRight.lock();
+        add_telemetry(device_uid(), voltage + rand_offset(), ampere + rand_offset());
+        serial.printf("PUSHED TELEMETRY\n");
+        accessRight.unlock();
+        ThisThread::sleep_for(1000);
+
+        i++;
+    }
+}
+
 
 int main()
 {
@@ -167,9 +234,11 @@ int main()
     config();
     serial.printf("This Device ID is: %s\n", device_uid().c_str());
 
-    add_telemetry(device_uid(), rand_voltage(), rand_ampere());
-    add_telemetry(device_uid(), rand_voltage(), rand_ampere());
-    add_telemetry(device_uid(), rand_voltage(), rand_ampere());
+    monitor.start(monitor_thread);
+    executor.start(executor_thread);
+
+    monitor.join();
+    executor.join();
 
     deinit();
 

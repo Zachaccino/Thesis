@@ -12,6 +12,9 @@ db = SQLAlchemy(app)
 db.Model.metadata.reflect(db.engine)
 
 
+events = {}
+
+
 class Telemetry(db.Model):
     __tablename__ = "telemetry"
     __table_args__ = {'extend_existing': True}
@@ -31,6 +34,7 @@ class Device(db.Model):
 
     telemetry = db.relationship(Telemetry)
 
+
 def generate_id(length):
     return ''.join(random.choice(string.ascii_letters) for i in range(length))
 
@@ -39,14 +43,15 @@ def overview():
     devices = db.session.execute(Device.query)
     telemetries = {}
 
-    for d in devices:
+
+    for device in devices:
         res = db.session.execute(Telemetry.query
-                                    .filter_by(device_uid=d[0])
+                                    .filter_by(device_uid=device[0])
                                     .order_by(Telemetry.time.desc())
                                     .limit(5))
-        telemetries[d[0]] = [r for r in res]
-    print(telemetries)
-    return str(telemetries)
+        telemetries[device[0]] = [{"voltage":t[2], "ampere":t[3], "time":t[4]} for t in res]
+
+    return jsonify(telemetries)
 
 
 @app.route('/detail')
@@ -60,9 +65,30 @@ def detail():
     return 'detail'
 
 
-@app.route('/execute')
-def execute():
-    return 'execute'
+@app.route('/add_event', methods=['POST'])
+def add_event():
+    data = request.json
+    uid = data["uid"]
+    event_code = data["event"]
+    event_value = data["value"]
+
+    if uid in events:
+        events[uid].append({"code":event_code, "value":event_value})
+    else:
+        events[uid] = [{"code":event_code, "value":event_value}]
+    return jsonify(events)
+
+
+@app.route('/pull_events', methods=['POST'])
+def pull_events():
+    data = request.json
+    uid = data["uid"]
+
+    if uid in events and events[uid]:
+        event = events[uid].pop(0)
+        return event["code"] + "," + str(event["value"])
+    else:
+        return "NA,0"
 
 
 @app.route('/add_telemetry', methods=['POST'])
