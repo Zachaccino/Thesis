@@ -4,9 +4,11 @@ import sqlite3
 import datetime
 import random
 import string
+from flask_cors import CORS, cross_origin
 
 
 app = Flask(__name__)
+CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///local.db'
 db = SQLAlchemy(app)
 db.Model.metadata.reflect(db.engine)
@@ -43,15 +45,26 @@ def overview():
     devices = db.session.execute(Device.query)
     telemetries = {}
 
-
     for device in devices:
         res = db.session.execute(Telemetry.query
                                     .filter_by(device_uid=device[0])
                                     .order_by(Telemetry.time.desc())
-                                    .limit(5))
+                                    .limit(15))
         telemetries[device[0]] = [{"voltage":t[2], "ampere":t[3], "time":t[4]} for t in res]
 
-    return jsonify(telemetries)
+    nivo_data = {}
+    for device in telemetries:
+        device_data = [{"id":"voltage", "data":[]}, {"id":"Ampere", "data":[]}]
+        for measurement in telemetries[device]:
+            time = str(measurement["time"]).split(" ")[1][:12]
+            voltage_point = {"x":time, "y":measurement["voltage"]}
+            ampere_point = {"x":time, "y":measurement["ampere"]}
+
+            device_data[0]["data"].append(voltage_point)
+            device_data[1]["data"].append(ampere_point)
+        nivo_data[device] = device_data
+
+    return jsonify(nivo_data)
 
 
 @app.route('/detail')
@@ -70,7 +83,7 @@ def add_event():
     data = request.json
     uid = data["uid"]
     event_code = data["event"]
-    event_value = data["value"]
+    event_value = float(data["value"])
 
     if uid in events:
         events[uid].append({"code":event_code, "value":event_value})
