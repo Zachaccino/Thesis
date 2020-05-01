@@ -1,0 +1,13 @@
+#!/bin/sh
+
+echo 5 seconds delay begins...
+sleep 5
+echo 5 seconds delay ends...
+
+python setup.py
+
+echo 2 seconds delay begins...
+sleep 2
+echo 2 seconds delay ends...
+
+gunicorn -w 2 --threads 2 -b 0.0.0.0:8080 wsgi:app
