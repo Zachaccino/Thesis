@@ -13,8 +13,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:123456789@db:3306/BackendD
 db = SQLAlchemy(app)
 db.Model.metadata.reflect(db.engine)
 
-events = {}
-
 
 class Telemetry(db.Model):
     __tablename__ = "telemetry"
@@ -26,6 +24,16 @@ class Telemetry(db.Model):
     ampere = db.Column(db.Float, nullable=False)
     time = db.Column(db.DateTime(80), default=datetime.datetime.utcnow, nullable=False)
 
+class Event(db.Model):
+    __tablename__ = "event"
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    device_uid = db.Column(db.String(80), db.ForeignKey('device.uid'), nullable=False)
+    code = db.Column(db.String(80), nullable=False)
+    value = db.Column(db.Float, nullable=False)
+    time = db.Column(db.DateTime(80), default=datetime.datetime.utcnow, nullable=False)
+
 class Device(db.Model):
     __tablename__ = "device"
     __table_args__ = {'extend_existing': True}
@@ -33,6 +41,8 @@ class Device(db.Model):
     uid = db.Column(db.String(80), primary_key=True)
 
     telemetry = db.relationship(Telemetry)
+
+
 
 
 def generate_id(length):
@@ -83,23 +93,40 @@ def add_event():
     event_code = data["event"]
     event_value = float(data["value"])
 
-    if uid in events:
-        events[uid].append({"code":event_code, "value":event_value})
-    else:
-        events[uid] = [{"code":event_code, "value":event_value}]
-    return jsonify(events)
+    device_exist = db.session.execute(Device.query.filter(Device.uid == uid)).scalar()
 
+    if not device_exist:
+        new_device = Device(uid=uid)
+        db.session.add(new_device)
+        db.session.commit()
 
+    new_event = Event(device_uid=uid,
+                        code=event_code,
+                        value=event_value)
+    db.session.add(new_event)
+    db.session.commit()
+
+    return "add_event"
+
+# HERERERERERE
 @app.route('/pull_events', methods=['POST'])
 def pull_events():
     data = request.json
     uid = data["uid"]
 
-    if uid in events and events[uid]:
-        event = events[uid].pop(0)
-        return event["code"] + "," + str(event["value"])
-    else:
+    res = db.session.execute(Event.query
+                                .filter_by(device_uid=uid)
+                                .order_by(Event.time.asc())
+                                .limit(1))
+
+    deserialised = [(str(e[2]) + "," + str(e[3]), e[0]) for e in res]
+
+    if not deserialised:
         return "NA,0"
+    else:
+        db.session.execute(Event.query.filter_by(id=deserialised[0][1]).delete())
+        db.session.commit()
+        return deserialised[0][0]
 
 
 @app.route('/add_telemetry', methods=['POST'])
@@ -119,10 +146,9 @@ def add_telemetry():
     db.session.add(new_telemetry)
     db.session.commit()
 
+    event_exist = db.session.execute(Event.query.filter(Device.uid == data['uid'])).scalar()
 
-    if data['uid'] not in events:
-        return 'false'
-    elif events[data['uid']]:
+    if event_exist:
         return 'true'
     else:
         return 'false'
