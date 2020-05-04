@@ -124,7 +124,7 @@ def pull_events():
     if not deserialised:
         return "NA,0"
     else:
-        db.session.execute(Event.query.filter_by(id=deserialised[0][1]).delete())
+        Event.query.filter_by(id=deserialised[0][1]).delete()
         db.session.commit()
         return deserialised[0][0]
 
