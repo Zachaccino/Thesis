@@ -7,23 +7,19 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: 123456789
       MYSQL_DATABASE: BackendDB
-    ports:
-      - 8000:3306
-    expose:
-      - 8000
 
   back:
     build: ./backend
     ports:
-      - 8001:8080
+      - 8000:8000
     expose:
-      - 8001
+      - 8000
     links:
       - db
 
   front:
     build: ./frontend
     ports:
-      - 8002:80
+      - 3000:80
     expose:
-      - 8002
+      - 3000

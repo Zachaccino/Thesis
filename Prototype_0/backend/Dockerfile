@@ -8,7 +8,7 @@ COPY ./app/setup.py .
 COPY ./app/run.sh .
 
 
-EXPOSE 8080
+EXPOSE 8000
 
 RUN chmod +x ./run.sh
 RUN pip install flask
