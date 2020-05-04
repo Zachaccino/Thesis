@@ -6,12 +6,13 @@ import Typography from '@material-ui/core/Typography'
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
-import Grid from '@material-ui/core/Grid'
-import axios from 'axios'
+import Grid from '@material-ui/core/Grid';
+import axios from 'axios';
 import { useState, useEffect } from 'react';
-import LineGraph from './components/LineGraph'
+import LineGraph from './components/LineGraph';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
+import RemoteServer from './components/RemoteServer';
 
 
 const useStyles = makeStyles(theme => ({
@@ -56,17 +57,24 @@ function DeviceCard(props) {
   const [ampere, setAmpere] = useState(2);
 
   const setOutputVoltage = () => {
-    axios.post('http://192.168.1.3:5000/add_event', {
+    axios.post('http://' + RemoteServer() + '/add_event', {
     uid: props.device,
     event:"setVoltage",
     value: voltage
   })};
 
   const setOutputAmpere = () => {
-    axios.post('http://192.168.1.3:5000/add_event', {
+    axios.post('http://' + RemoteServer() + '/add_event', {
     uid: props.device,
     event:"setAmpere",
     value: ampere
+  })};
+
+  const setPowerDown = () => {
+    axios.post('http://' + RemoteServer() + '/add_event', {
+    uid: props.device,
+    event:"powerDown",
+    value: 0
   })};
 
   return (
@@ -84,6 +92,9 @@ function DeviceCard(props) {
           Set Ampere
         </Button>
         <TextField id="standard-basic" variant="outlined" label="Target Ampere" type="number" onChange={(e) => {setAmpere(e.target.value)}} value={ampere}/>
+        <Button variant="contained" color="primary" className={classes.actionBtn} onClick={setPowerDown}>
+          Force Shutdown
+        </Button>
       </CardContent>
     </Card>
   )
@@ -101,7 +112,7 @@ function Console(props) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await axios('http://192.168.1.3:5000/overview');
+      const res = await axios('http://' + RemoteServer() + '/overview');
       setTelemetries(res.data);
     };
 

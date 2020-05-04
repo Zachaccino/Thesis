@@ -5,8 +5,7 @@
 
 
 // Server Configurations.
-const char *server_address = "192.168.1.3";
-const int server_port = 5000;
+const string server_address = "192.168.1.3:5000";
 const int max_retry = 3;
 
 // KV Store Configurations.
@@ -16,12 +15,11 @@ const int value_length = 64;
 // Setup.
 Serial serial(USBTX, USBRX);
 NetworkInterface *iface;
-Thread monitor;
-Thread executor;
 
 // TESTING ONLY.
 float voltage = 5.5;
 float ampere = 2.0;
+bool power = true;
 Mutex accessRight;
 
 
@@ -70,11 +68,11 @@ bool connect()
 }
 
 // Send an HTTP Request.
-pair<int, string> send(const char* json, http_method method, const char* endpoint)
+pair<int, string> send(string json, http_method method, string endpoint)
 {
-    HttpRequest* req = new HttpRequest(iface, method, endpoint);
+    HttpRequest* req = new HttpRequest(iface, method, endpoint.c_str());
     req->set_header("Content-Type", "application/json");
-    HttpResponse* response = req->send(json, strlen(json));
+    HttpResponse* response = req->send(json.c_str(), strlen(json.c_str()));
 
     string content = "";
     int status_code = response->get_status_code();
@@ -113,20 +111,20 @@ string device_uid()
 pair<int, string> add_device(string uid, string device)
 {   
     string json = "{\"uid\": \"" + uid + "\",\"device\": \"" + device + "\"}";
-    return send(json.c_str(), HTTP_POST, "http://192.168.1.3:5000/add_device");
+    return send(json, HTTP_POST, "http://" + server_address + "/add_device");
 }
 
 pair<int, string> add_telemetry(string uid, double voltage, double ampere)
 {
     string json = "{\"uid\": \"" + uid + "\",\"voltage\":" + to_string(voltage) + ",\"ampere\":" + to_string(ampere) + "}";
     serial.printf("TELEMETRY SENT: %s\n", json.c_str());
-    return send(json.c_str(), HTTP_POST, "http://192.168.1.3:5000/add_telemetry");
+    return send(json, HTTP_POST, "http://" + server_address + "/add_telemetry");
 }
 
 pair<int, string> pull_events(string uid)
 {   
     string json = "{\"uid\": \"" + uid + "\"}";
-    return send(json.c_str(), HTTP_POST, "http://192.168.1.3:5000/pull_events");
+    return send(json, HTTP_POST, "http://" + server_address + "/pull_events");
 }
 
 // Configure Device.
@@ -161,60 +159,53 @@ double rand_offset()
 
 
 // Thread Workers
-void executor_thread()
-{
-    serial.printf("Executor Thread Started...\n");
+void executor()
+{   
+    string* raw_cmd = NULL;
+    string* cmd_code = NULL;
+    string* cmd_value = NULL;
+    bool contine = true;
 
-    int i = 0;
-    while (i < 30)
-    {
-        accessRight.lock();
-    
+    while (contine) {
         pair<int, string> res = pull_events(device_uid());
 
-        string raw_cmd = res.second;
+        raw_cmd = new string(res.second);
         string delim = ",";
 
-        size_t code_pos = raw_cmd.find(delim);
-        string cmd_code = raw_cmd.substr(0, code_pos);
-        raw_cmd.erase(0, code_pos + delim.length());
+        size_t code_pos = raw_cmd->find(delim);
+        cmd_code = new string(raw_cmd->substr(0, code_pos));
 
-        size_t value_pos = raw_cmd.find(delim);
-        string cmd_value = raw_cmd.substr(0, value_pos);
+        raw_cmd->erase(0, code_pos + delim.length());
 
-        if (cmd_code == "setVoltage")
+        size_t value_pos = raw_cmd->find(delim);
+        cmd_value = new string(raw_cmd->substr(0, value_pos));
+        
+        if (*cmd_code == "setVoltage")
         {
-            voltage = stod(cmd_value);
+            voltage = stod(*cmd_value);
         } 
-        else if (cmd_code == "setAmpere")
+        else if (*cmd_code == "setAmpere")
         {
-            ampere = stod(cmd_value);
+            ampere = stod(*cmd_value);
+        }
+        else if (*cmd_code == "powerDown")
+        {
+            power = false;
+            contine = false;
         }
         else {
-            serial.printf("NO COMMAND YET.\n");
+            contine = false;
         }
-        accessRight.unlock();
-        ThisThread::sleep_for(1000);
 
-        i++;
+        delete raw_cmd;
+        delete cmd_code;
+        delete cmd_value;
     }
 }
 
-void monitor_thread()
+void monitor()
 {
-    serial.printf("Monitor Thread Started...\n");
-
-    int i = 0;
-    while (i < 30)
-    {
-        accessRight.lock();
-        add_telemetry(device_uid(), voltage + rand_offset(), ampere + rand_offset());
-        serial.printf("PUSHED TELEMETRY\n");
-        accessRight.unlock();
-        ThisThread::sleep_for(1000);
-
-        i++;
-    }
+    add_telemetry(device_uid(), voltage + rand_offset(), ampere + rand_offset());
 }
 
 
@@ -234,15 +225,17 @@ int main()
     config();
     serial.printf("This Device ID is: %s\n", device_uid().c_str());
 
-    monitor.start(monitor_thread);
-    executor.start(executor_thread);
-
-    monitor.join();
-    executor.join();
+    
+    while (power)
+    {
+        monitor();
+        executor();
+        ThisThread::sleep_for(1000);
+    }
 
     deinit();
 
-    serial.printf("Program Terminated");
+    serial.printf("Program Terminated\n\n\n");
     return 0;
 }
 
