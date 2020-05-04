@@ -109,7 +109,7 @@ def add_telemetry():
     device_exist = db.session.execute(Device.query.filter(Device.uid == data['uid'])).scalar()
 
     if not device_exist:
-        new_device = Device(uid=new_uid)
+        new_device = Device(uid=data['uid'])
         db.session.add(new_device)
         db.session.commit()
 
