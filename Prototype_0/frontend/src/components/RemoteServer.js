@@ -1,5 +1,5 @@
 function RemoteServer() {
-  return "192.168.1.3:5000"
+  return "hyperlynk.zachaccino.me:8001"
 }
 
 export default RemoteServer;
