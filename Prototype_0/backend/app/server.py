@@ -118,8 +118,12 @@ def add_telemetry():
                                 ampere=float(data["ampere"]))
     db.session.add(new_telemetry)
     db.session.commit()
-    return 'add_telemetry'
 
+    if events[data['uid']]:
+        return 'true'
+    else:
+        return 'false'
+        
 
 @app.route('/add_device', methods=['POST'])
 def add_device():
