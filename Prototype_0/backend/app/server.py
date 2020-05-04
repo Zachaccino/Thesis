@@ -31,7 +31,6 @@ class Device(db.Model):
     __table_args__ = {'extend_existing': True}
 
     uid = db.Column(db.String(80), primary_key=True)
-    name = db.Column(db.String(80), nullable=False)
 
     telemetry = db.relationship(Telemetry)
 
@@ -106,6 +105,14 @@ def pull_events():
 @app.route('/add_telemetry', methods=['POST'])
 def add_telemetry():
     data = request.json
+
+    device_exist = db.session.execute(Device.query.filter(Device.uid == data['uid'])).scalar()
+
+    if not device_exist:
+        new_device = Device(uid=new_uid)
+        db.session.add(new_device)
+        db.session.commit()
+
     new_telemetry = Telemetry(device_uid=data["uid"],
                                 voltage=float(data["voltage"]),
                                 ampere=float(data["ampere"]))
@@ -132,7 +139,7 @@ def add_device():
     if len(data['uid']) != 16:
         new_uid = generate_id(16)
 
-    new_device = Device(uid=new_uid, name=data["device"])
+    new_device = Device(uid=new_uid)
     db.session.add(new_device)
     db.session.commit()
 
