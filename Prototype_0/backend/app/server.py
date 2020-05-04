@@ -119,11 +119,14 @@ def add_telemetry():
     db.session.add(new_telemetry)
     db.session.commit()
 
-    if events[data['uid']]:
+
+    if data['uid'] not in events:
+        return 'false'
+    elif events[data['uid']]:
         return 'true'
     else:
         return 'false'
-        
+
 
 @app.route('/add_device', methods=['POST'])
 def add_device():
