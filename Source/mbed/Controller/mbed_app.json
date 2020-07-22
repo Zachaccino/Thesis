@@ -1,0 +1,44 @@
+{
+    "target_overrides": {
+        "*": {
+            "GENERIC_AT3GPP.provide-default": true,
+            "GENERIC_AT3GPP.tx": "D1",
+            "GENERIC_AT3GPP.rx": "D0",
+            "target.network-default-interface-type": "CELLULAR",
+            "mbed-trace.enable": true,
+            "lwip.ipv4-enabled": true,
+            "lwip.ipv6-enabled": false,
+            "lwip.ethernet-enabled": false,
+            "lwip.ppp-enabled": true,
+            "lwip.tcp-enabled": true,
+            "platform.stdio-convert-newlines": true,
+            "platform.stdio-baud-rate": 115200,
+            "platform.default-serial-baud-rate": 115200,
+            "platform.stdio-buffered-serial": true,
+            "cellular.debug-at": true,
+            "nsapi.default-cellular-plmn": 0,
+            "nsapi.default-cellular-sim-pin": "\"0000\"",
+            "nsapi.default-cellular-apn": 0,
+            "nsapi.default-cellular-username": 0,
+            "nsapi.default-cellular-password": 0,
+            "ppp.ipv4-enabled": true,
+            "ppp.ipv6-enabled": false,
+            "platform.heap-stats-enabled": 1,
+            "nsapi.default-wifi-security": "WPA_WPA2",
+            "nsapi.default-wifi-ssid": "\"Your Beloved Neighbour\"",
+            "nsapi.default-wifi-password": "\"0420823509\""
+        },
+        "NUMAKER_IOT_M263A": {
+            "GENERIC_AT3GPP.provide-default": true,
+            "GENERIC_AT3GPP.tx": "PE_14",
+            "GENERIC_AT3GPP.rx": "PE_15",
+            "esp8266.provide-default": true,
+            "esp8266.tx": "PC_7",
+            "esp8266.rx": "PC_6",
+            "esp8266.rts": "PE_13",
+            "esp8266.cts": "PC_8",
+            "esp8266.rst": "PE_12",
+            "storage.storage_type": "TDB_INTERNAL"
+        }
+    }
+}

@@ -1,0 +1,15 @@
+{
+  "device_id":"String",
+  "status":"String",
+  "region":"Ref Region",
+  "last_modified":"date",
+  "events":[{
+    "event_code":"String",
+    "event_value":0.00
+  }],
+  "telemetries":[{
+    "current":0.00,
+    "voltage":0.00,
+    "datetime":"Date"
+  }]
+}
