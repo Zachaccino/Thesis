@@ -22,7 +22,7 @@ function GraphLoader(props) {
     )
   } else {
     return (
-      <LineGraph data={props.data} max={props.max} />
+      <LineGraph data={props.data} max={props.max} yLabel={props.yLabel}/>
     )
   }
 }
@@ -46,7 +46,7 @@ function TrendCard(props) {
           </Typography>
         </Grid>
         <Grid item>
-          <GraphLoader data={props.data} max={props.max} />
+          <GraphLoader data={props.data} max={props.max} yLabel={props.yLabel}/>
         </Grid>
       </Grid>
     </Paper>

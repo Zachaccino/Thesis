@@ -169,7 +169,7 @@ function PanelDetail(props) {
           setPower(res.data["Payload"]["power_graph"])
         });
     };
-    
+
     fetchData();
 
     const interval = setInterval(() => {
@@ -195,13 +195,13 @@ function PanelDetail(props) {
         <StatusCard title="Status" value={status} />
       </Grid>
       <Grid item xs={12}>
-        <TrendCard title="Power Output" data={power} max={250} />
+        <TrendCard title="Power Output" data={power} max={250} yLabel={"Power (watt)"} />
       </Grid>
       <Grid item xs={12}>
-        <TrendCard title="Current" data={current} max={15} />
+        <TrendCard title="Current" data={current} max={15} yLabel={"Current (ampere)"} />
       </Grid>
       <Grid item xs={12}>
-        <TrendCard title="Voltage" data={voltage} max={15} />
+        <TrendCard title="Voltage" data={voltage} max={15} yLabel={"Voltage (volt)"} />
       </Grid>
       <Grid item xs={6}>
         <CurrentControlPanel />
