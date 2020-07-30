@@ -12,7 +12,7 @@ CORS(app)
 
 
 # MongoDB Database
-client = pymongo.MongoClient('mongodb://hyperlynk.zachaccino.me:27017/', username="hyperlynk", password="OnePurpleParrot")
+client = pymongo.MongoClient('mongodb://192.168.1.14:27017/', username="hyperlynk", password="OnePurpleParrot")
 db = client['hyperlynkdb']
 
 if db.regions.count_documents({'name': "Awaiting Allocation"}) == 0:

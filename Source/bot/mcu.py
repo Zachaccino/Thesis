@@ -6,7 +6,7 @@ from threading import Thread
 
 # Configuration
 counts = 10
-server = "http://hyperlynk.zachaccino.me:8000/"
+server = "http://192.168.1.14:8000/"
 debug = False
 
 # Read IDs

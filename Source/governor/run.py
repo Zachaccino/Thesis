@@ -9,7 +9,7 @@ def device_status_monitor():
 
     # MongoDB Database
     client = pymongo.MongoClient(
-        'mongodb://hyperlynk.zachaccino.me:27017/', username="hyperlynk", password="OnePurpleParrot")
+        'mongodb://192.168.1.14:27017/', username="hyperlynk", password="OnePurpleParrot")
     db = client['hyperlynkdb']
 
     while(True):
