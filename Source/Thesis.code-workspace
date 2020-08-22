@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "backend"
+		},
+		{
+			"path": "bot"
+		},
+		{
+			"path": "frontend"
+		},
+		{
+			"path": "governor"
+		}
+	],
+	"settings": {}
+}

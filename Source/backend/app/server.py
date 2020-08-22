@@ -170,32 +170,6 @@ def push_event():
     return "Successfuly added."
 
 
-@ app.route('/pull_event', methods=['POST'])
-def pull_event():
-    device_id = request.json['device_id']
-
-    if not device_exists(device_id):
-        return ""
-
-    events = db.devices.find_one({'device_id': device_id})['events']
-
-    db.devices.update_one(
-        {'device_id': device_id},
-        {
-            '$set': {
-                'events': []
-            }
-        }
-    )
-
-    event_stream = ""
-    for e in events:
-        event_stream += e["event_code"] + ","
-        event_stream += str(e["event_value"]) + ","
-
-    return event_stream.rstrip(",")
-
-
 # Telemetry
 @ app.route('/add_telemetry', methods=['POST'])
 def add_telemetry():
@@ -204,7 +178,7 @@ def add_telemetry():
     voltage = float(request.json['voltage'])
 
     if not device_exists(device_id):
-        return "Failed. Device not exists."
+        return ""
 
     rec_time = datetime.datetime.utcnow()
 
@@ -225,7 +199,23 @@ def add_telemetry():
         }
     )
 
-    return "Successfuly added."
+    events = db.devices.find_one({'device_id': device_id})['events']
+
+    db.devices.update_one(
+        {'device_id': device_id},
+        {
+            '$set': {
+                'events': []
+            }
+        }
+    )
+
+    event_stream = ""
+    for e in events:
+        event_stream += e["event_code"] + ","
+        event_stream += str(e["event_value"]) + ","
+
+    return event_stream.rstrip(",")
 
 
 # Device Management
