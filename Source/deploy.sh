@@ -8,7 +8,7 @@ echo "[6] All"
 echo "[7] Remove All"
 read INDEX
 
-$SERVER_ADDRESS=192.168.1.14
+SERVER_ADDRESS=192.168.1.14
 
 
 if [ $INDEX = "1" ] || [ $INDEX = "6" ]; then
@@ -17,7 +17,7 @@ if [ $INDEX = "1" ] || [ $INDEX = "6" ]; then
 elif [ $INDEX = "2" ] || [ $INDEX = "6" ]; then
     cd ./backend
     docker build --tag backend:2.0 .
-    docker run -p 8000:8000 --detach --name backend backend:2.0 -e "SERVER_ADDRESS=$SERVER_ADDRESS"
+    docker run -e "SERVER_ADDRESS=$SERVER_ADDRESS" -p 8000:8000 --detach --name backend backend:2.0 
 
 elif [ $INDEX = "3" ] || [ $INDEX = "6" ]; then
     cd ./frontend
@@ -27,12 +27,12 @@ elif [ $INDEX = "3" ] || [ $INDEX = "6" ]; then
 elif [ $INDEX = "4" ] || [ $INDEX = "6" ]; then
     cd ./bot
     docker build --tag bot:1.0 .
-    docker run --detach --name bot bot:1.0 -e "SERVER_ADDRESS=$SERVER_ADDRESS"
+    docker run -e "SERVER_ADDRESS=$SERVER_ADDRESS" --detach --name bot bot:1.0 
 
 elif [ $INDEX = "5" ] || [ $INDEX = "6" ]; then
     cd ./governor
     docker build --tag governor:1.0 .
-    docker run --detach --name governor governor:1.0 -e "SERVER_ADDRESS=$SERVER_ADDRESS"
+    docker run -e "SERVER_ADDRESS=$SERVER_ADDRESS" --detach --name governor governor:1.0
 
 elif [ $INDEX = "7" ]; then
     docker rm --force mongodb
