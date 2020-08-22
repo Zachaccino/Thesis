@@ -1,7 +1,12 @@
 import pymongo
 import datetime
 import time
+import os
 
+server_address = os.environ.get("SERVER_ADDRESS")
+
+if not server_address:
+    exit(1)
 
 def device_status_monitor():
     period = 10
@@ -9,7 +14,7 @@ def device_status_monitor():
 
     # MongoDB Database
     client = pymongo.MongoClient(
-        'mongodb://192.168.1.14:27017/', username="hyperlynk", password="OnePurpleParrot")
+        'mongodb://' + server_address + ':27017/', username="hyperlynk", password="OnePurpleParrot")
     db = client['hyperlynkdb']
 
     while(True):

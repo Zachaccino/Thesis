@@ -4,6 +4,15 @@ import pymongo
 import datetime
 import random
 import string
+import os
+
+
+server_address = os.environ.get("SERVER_ADDRESS")
+
+if not server_address:
+    exit(1)
+
+db_address = 'mongodb://' + server_address + ':27017/'
 
 
 # Backend App
@@ -12,7 +21,7 @@ CORS(app)
 
 
 # MongoDB Database
-client = pymongo.MongoClient('mongodb://192.168.1.14:27017/', username="hyperlynk", password="OnePurpleParrot")
+client = pymongo.MongoClient(db_address, username="hyperlynk", password="OnePurpleParrot")
 db = client['hyperlynkdb']
 
 if db.regions.count_documents({'name': "Awaiting Allocation"}) == 0:

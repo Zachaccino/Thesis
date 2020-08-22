@@ -2,11 +2,16 @@ import requests
 import random
 import time
 from threading import Thread
+import os
 
+server_address = os.environ.get("SERVER_ADDRESS")
+
+if not server_address:
+    exit(1)
 
 # Configuration
 counts = 10
-server = "http://192.168.1.14:8000/"
+server = 'http://' + server_address + ':8000'
 debug = False
 
 # Read IDs
