@@ -21,7 +21,7 @@ bool Remote::connect() {
   return connected;
 }
 
-pair<int, std::string> Remote::send(std::string json, http_method method,
+pair<int, ::string> Remote::send(std::string json, http_method method,
                                        std::string endpoint) {
   HttpRequest request = HttpRequest(iface, method, endpoint.c_str());
   request.set_header("Content-Type", "application/json");
@@ -51,11 +51,6 @@ pair<int, std::string> Remote::add_telemetry(std::string id, double voltage,
                 "\",\"voltage\":" + to_string(voltage) +
                 ",\"current\":" + to_string(current) + "}";
   return send(json, HTTP_POST, "http://" + address + "/add_telemetry");
-}
-
-pair<int, std::string> Remote::pull_event(std::string id) {
-  string json = "{\"device_id\": \"" + id + "\"}";
-  return send(json, HTTP_POST, "http://" + address + "/pull_event");
 }
 
 Remote::~Remote() {}

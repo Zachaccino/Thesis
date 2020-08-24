@@ -1,16 +1,16 @@
-#ifndef INFO_H
-#define INFO_H
+#ifndef CONTROLLER_H
+#define CONTROLLER_H
 
 #include "KVStore.h"
 #include "kvstore_global_api.h"
 #include <string>
 
-class Info {
+class Controller {
 public:
-  Info();
+  Controller();
   std::string id();
   void set_id(std::string id);
-  ~Info();
+  ~Controller();
 };
 
 #endif

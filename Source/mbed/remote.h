@@ -25,7 +25,6 @@ public:
   pair<int, std::string> register_device(std::string id);
   pair<int, std::string> add_telemetry(std::string id, double voltage,
                                        double ampere);
-  pair<int, std::string> pull_event(std::string id);
 };
 
 #endif

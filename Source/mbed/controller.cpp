@@ -1,13 +1,12 @@
-#include "info.h"
+#include "controller.h"
 
 #define KEY_LENGTH 32
 #define VALUE_LENGTH 64
 #include "mbed.h"
-#include "NuMicro.h"
 
-Info::Info() {}
+Controller::Controller() {}
 
-std::string Info::id() {
+std::string Controller::id() {
   char key[KEY_LENGTH] = {"uid"};
   kv_info_t kv_info;
 
@@ -22,7 +21,7 @@ std::string Info::id() {
   return "";
 }
 
-void Info::set_id(std::string id) {
+void Controller::set_id(std::string id) {
   char key[KEY_LENGTH] = {"uid"};
   char value[VALUE_LENGTH];
   memset(value, 0, VALUE_LENGTH);
@@ -30,4 +29,4 @@ void Info::set_id(std::string id) {
   kv_set(key, value, strlen(value), 0);
 }
 
-Info::~Info() {}
+Controller::~Controller() {}

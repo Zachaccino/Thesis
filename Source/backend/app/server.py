@@ -21,7 +21,8 @@ CORS(app)
 
 
 # MongoDB Database
-client = pymongo.MongoClient(db_address, username="hyperlynk", password="OnePurpleParrot")
+client = pymongo.MongoClient(
+    db_address, username="hyperlynk", password="OnePurpleParrot")
 db = client['hyperlynkdb']
 
 if db.regions.count_documents({'name': "Awaiting Allocation"}) == 0:
@@ -62,8 +63,12 @@ def overview():
         failure_percentage = round(
             failure_counts/(operating_counts+offline_counts+failure_counts)*100, 2)
 
-    power_output = round(sum([d["telemetries"][-1]["current"] * d["telemetries"][-1]["voltage"] if d["telemetries"] else 0
+    power_output_out = round(sum([d["telemetries"][-1]["current_out"] * d["telemetries"][-1]["voltage_out"] if d["telemetries"] else 0
                               for d in db.devices.find()]), 2)
+    
+    power_output_in = round(sum([d["telemetries"][-1]["current_in"] * d["telemetries"][-1]["voltage_in"] if d["telemetries"] else 0
+                              for d in db.devices.find()]), 2)
+
     server_status = "Normal"
     region_counts = db.regions.count_documents({})
 
@@ -73,7 +78,8 @@ def overview():
         "offline_counts": offline_counts,
         "failure_counts": failure_counts,
         "failure_percentage": str(failure_percentage) + "%",
-        "power_output": power_output,
+        "power_output_out": power_output_out,
+        "power_output_in": power_output_in,
         "server_status": server_status,
         "region_counts": region_counts,
     }
@@ -84,14 +90,18 @@ def overview():
 @app.route('/regions', methods=['GET'])
 def regions():
     regions = []
-    values = []
+    ins = []
+    outs = []
     for r in db.regions.find():
-        pwr_output = round(sum([d["telemetries"][-1]["current"] * d["telemetries"][-1]["voltage"] if d["telemetries"] else 0
+        pwr_output_out = round(sum([d["telemetries"][-1]["current_out"] * d["telemetries"][-1]["voltage_out"] if d["telemetries"] else 0
+                                for d in db.devices.find({"region": r["name"]})]), 2)
+        pwr_output_in = round(sum([d["telemetries"][-1]["current_in"] * d["telemetries"][-1]["voltage_in"] if d["telemetries"] else 0
                                 for d in db.devices.find({"region": r["name"]})]), 2)
         regions.append(r["name"])
-        values.append(pwr_output)
+        outs.append(pwr_output_out)
+        ins.append(pwr_output_in)
 
-    return response("Success", {"Regions": regions, "Values": values})
+    return response("Success", {"Regions": regions, "In": ins, "Out": outs})
 
 
 @app.route('/panels', methods=['POST'])
@@ -102,17 +112,22 @@ def panels():
         return response("Region not found.", [])
 
     panels = []
-    values = []
+    ins = []
+    outs = []
     for d in db.devices.find({"region": region_name}):
-        pwr_output = 0
+        pwr_output_out = 0
+        pwr_output_in = 0
         if d["telemetries"]:
-            pwr_output = d["telemetries"][-1]["current"] * \
-                d["telemetries"][-1]["voltage"]
+            pwr_output_out = d["telemetries"][-1]["current_out"] * \
+                d["telemetries"][-1]["voltage_out"]
+            pwr_output_in = d["telemetries"][-1]["current_in"] * \
+                d["telemetries"][-1]["voltage_in"]
 
         panels.append(d["device_id"])
-        values.append(round(pwr_output, 2))
+        outs.append(round(pwr_output_out, 2))
+        ins.append(round(pwr_output_in, 2))
 
-    return response("Success", {"Panels": panels, "Values": values})
+    return response("Success", {"Panels": panels, "In": ins, "Out": outs})
 
 
 @app.route('/panel_detail', methods=['POST'])
@@ -123,25 +138,37 @@ def panel_detail():
         return response("Device doest not exists.")
 
     device = db.devices.find_one({"device_id": device_id})
-    current = [{"id": "Current", "data": []}]
-    voltage = [{"id": "Voltage", "data": []}]
-    power = [{"id": "Power", "data": []}]
+    current_in = [{"id": "current_in", "data": []}]
+    voltage_in = [{"id": "voltage_in", "data": []}]
+    current_out = [{"id": "current_out", "data": []}]
+    voltage_out = [{"id": "voltage_out", "data": []}]
+    power_in = [{"id": "power_in", "data": []}]
+    power_out = [{"id": "power_out", "data": []}]
 
     for t in device["telemetries"][-60:]:
-        current[0]["data"].append(
-            {"x": len(current[0]["data"]), "y": t["current"]})
-        voltage[0]["data"].append(
-            {"x": len(voltage[0]["data"]), "y": t["voltage"]})
-        power[0]["data"].append(
-            {"x": len(power[0]["data"]), "y": t["current"] * t["voltage"]})
+        current_in[0]["data"].append(
+            {"x": len(current_in[0]["data"]), "y": t["current_in"]})
+        voltage_in[0]["data"].append(
+            {"x": len(voltage_in[0]["data"]), "y": t["voltage_in"]})
+        current_out[0]["data"].append(
+            {"x": len(current_out[0]["data"]), "y": t["current_out"]})
+        voltage_out[0]["data"].append(
+            {"x": len(voltage_out[0]["data"]), "y": t["voltage_out"]})
+        power_in[0]["data"].append(
+            {"x": len(power_in[0]["data"]), "y": t["current_in"] * t["voltage_in"]})
+        power_out[0]["data"].append(
+            {"x": len(power_out[0]["data"]), "y": t["current_out"] * t["voltage_out"]})
 
     return response("", {
         "device_id": device["device_id"],
         "region": device["region"],
         "status": device["status"],
-        "current_graph": current,
-        "voltage_graph": voltage,
-        "power_graph": power
+        "current_in_graph": current_in,
+        "voltage_in_graph": voltage_in,
+        "power_in_graph": power_in,
+        "current_out_graph": current_out,
+        "voltage_out_graph": voltage_out,
+        "power_out_graph": power_out
     })
 
 
@@ -174,8 +201,10 @@ def push_event():
 @ app.route('/add_telemetry', methods=['POST'])
 def add_telemetry():
     device_id = request.json['device_id']
-    current = float(request.json['current'])
-    voltage = float(request.json['voltage'])
+    current_in = float(request.json['current_in'])
+    voltage_in = float(request.json['voltage_in'])
+    current_out = float(request.json['current_out'])
+    voltage_out = float(request.json['voltage_out'])
 
     if not device_exists(device_id):
         return ""
@@ -187,8 +216,10 @@ def add_telemetry():
         {
             '$push': {
                 'telemetries': {
-                    'current': current,
-                    'voltage': voltage,
+                    'current_in': current_in,
+                    'voltage_in': voltage_in,
+                    'current_out': current_out,
+                    'voltage_out': voltage_out,
                     'datetime': rec_time
                 }
             },
