@@ -50,8 +50,8 @@ def overview():
         "offline_counts": offline_counts,
         "failure_counts": failure_counts,
         "failure_percentage": str(failure_percentage) + "%",
-        "power_output_out": power_out,
-        "power_output_in": power_in,
+        "power_out": power_out,
+        "power_in": power_in,
         "server_status": server_status,
         "region_counts": region_counts,
     })

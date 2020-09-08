@@ -12,14 +12,16 @@ function CardsForAllPanels() {
   const cards = []
   let { region } = useParams();
   const [panels, setPanels] = useState([]);
-  const [values, setValues] = useState([]);
+  const [powerIns, setPowerIns] = useState([]);
+  const [powerOuts, setPowerOuts] = useState([]);
 
   useEffect(() => {
     const fetchData = () => {
       axios.post(RemoteServer() + '/panels', { "region_name": region })
         .then(res => {
           setPanels(res.data["Payload"]["Panels"])
-          setValues(res.data["Payload"]["Values"])
+          setPowerIns(res.data["Payload"]["In"])
+          setPowerOuts(res.data["Payload"]["Out"])
         });
     };
 
@@ -35,7 +37,7 @@ function CardsForAllPanels() {
   for (var i = 0; i < panels.length; i++) {
     cards.push(
       <Grid item xs={12} sm={6} md={3}>
-        <LiveCard title={panels[i]} value={values[i]} to={"/paneldetail/" + panels[i]} />
+        <LiveCard title={panels[i]} value={powerOuts[i]} to={"/paneldetail/" + panels[i]} />
       </Grid>
     )
   }

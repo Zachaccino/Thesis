@@ -10,14 +10,16 @@ import axios from 'axios';
 function CardsForAllRegions() {
   const cards = []
   const [regions, setRegions] = useState([]);
-  const [values, setValues] = useState([]);
+  const [powerIns, setPowerIns] = useState([]);
+  const [powerOuts, setPowerOuts] = useState([]);
 
   useEffect(() => {
     const fetchData = () => {
       axios.get(RemoteServer() + '/regions')
         .then(res => {
           setRegions(res.data["Payload"]["Regions"])
-          setValues(res.data["Payload"]["Values"])
+          setPowerIns(res.data["Payload"]["In"])
+          setPowerOuts(res.data["Payload"]["Out"])
         });
     };
 
@@ -34,7 +36,7 @@ function CardsForAllRegions() {
     const redirectURL = "/panels/" + regions[i]
     cards.push(
       <Grid item xs={6} sm={3}>
-        <LiveCard title={regions[i]} value={values[i]} to={redirectURL} />
+        <LiveCard title={regions[i]} value={powerOuts[i]} to={redirectURL} />
       </Grid>
     )
   }

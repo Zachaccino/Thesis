@@ -14,7 +14,8 @@ function Overview() {
   const [offlineCounts, setOfflineCounts] = useState("Loading");
   const [failureCounts, setFailureCounts] = useState("Loading");
   const [failurePercentage, setFailurePercentage] = useState("Loading");
-  const [powerOutput, setPowerOutput] = useState("Loading");
+  const [powerIn, setPowerIn] = useState("Loading");
+  const [powerOut, setPowerOut] = useState("Loading");
   const [serverStatus, setServerStatus] = useState("Loading");
   const [regionCounts, setRegionCounts] = useState("Loading");
 
@@ -27,7 +28,8 @@ function Overview() {
           setOfflineCounts(res.data["Payload"]["offline_counts"])
           setFailureCounts(res.data["Payload"]["failure_counts"])
           setFailurePercentage(res.data["Payload"]["failure_percentage"])
-          setPowerOutput(res.data["Payload"]["power_output"])
+          setPowerOut(res.data["Payload"]["power_out"])
+          setPowerIn(res.data["Payload"]["power_in"])
           setServerStatus(res.data["Payload"]["server_status"])
           setRegionCounts(res.data["Payload"]["region_counts"])
         });
@@ -60,10 +62,13 @@ function Overview() {
         <StatusCard title="Failure Panels" value={failureCounts} />
       </Grid>
       <Grid item xs={6} sm={3}>
-        <StatusCard title="Failure Rate" value={failurePercentage} />
+        <StatusCard title="Failure Percentage" value={failurePercentage} />
       </Grid>
       <Grid item xs={6} sm={3}>
-        <StatusCard title="Power Output" value={powerOutput} />
+        <StatusCard title="Output Power" value={powerOut} />
+      </Grid>
+      <Grid item xs={6} sm={3}>
+        <StatusCard title="Input Power" value={powerIn} />
       </Grid>
       <Grid item xs={6} sm={3}>
         <StatusCard title="Server Status" value={serverStatus} />

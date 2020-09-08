@@ -154,9 +154,12 @@ function PanelDetail(props) {
   let { panel } = useParams();
   const [region, setRegion] = useState("Loading");
   const [status, setStatus] = useState("Loading");
-  const [current, setCurrent] = useState();
-  const [voltage, setVoltage] = useState();
-  const [power, setPower] = useState();
+  const [currentIn, setCurrentIn] = useState();
+  const [voltageIn, setVoltageIn] = useState();
+  const [powerIn, setPowerIn] = useState();
+  const [currentOut, setCurrentOut] = useState();
+  const [voltageOut, setVoltageOut] = useState();
+  const [powerOut, setPowerOut] = useState();
 
   useEffect(() => {
     const fetchData = () => {
@@ -164,9 +167,12 @@ function PanelDetail(props) {
         .then(res => {
           setRegion(res.data["Payload"]["region"])
           setStatus(res.data["Payload"]["status"])
-          setCurrent(res.data["Payload"]["current_graph"])
-          setVoltage(res.data["Payload"]["voltage_graph"])
-          setPower(res.data["Payload"]["power_graph"])
+          setCurrentIn(res.data["Payload"]["current_in_graph"])
+          setVoltageIn(res.data["Payload"]["voltage_in_graph"])
+          setPowerIn(res.data["Payload"]["power_in_graph"])
+          setCurrentOut(res.data["Payload"]["current_out_graph"])
+          setVoltageOut(res.data["Payload"]["voltage_out_graph"])
+          setPowerOut(res.data["Payload"]["power_out_graph"])
         });
     };
 
@@ -195,13 +201,22 @@ function PanelDetail(props) {
         <StatusCard title="Status" value={status} />
       </Grid>
       <Grid item xs={12}>
-        <TrendCard title="Power Output" data={power} max={250} yLabel={"Power (watt)"} />
+        <TrendCard title="Output Power" data={powerOut} max={250} yLabel={"Power (watt)"} />
       </Grid>
       <Grid item xs={12}>
-        <TrendCard title="Current" data={current} max={15} yLabel={"Current (ampere)"} />
+        <TrendCard title="Output Current" data={currentOut} max={15} yLabel={"Current (ampere)"} />
       </Grid>
       <Grid item xs={12}>
-        <TrendCard title="Voltage" data={voltage} max={15} yLabel={"Voltage (volt)"} />
+        <TrendCard title="Outut Voltage" data={voltageOut} max={15} yLabel={"Voltage (volt)"} />
+      </Grid>
+      <Grid item xs={12}>
+        <TrendCard title="Input Power" data={powerIn} max={250} yLabel={"Power (watt)"} />
+      </Grid>
+      <Grid item xs={12}>
+        <TrendCard title="Input Current" data={currentIn} max={15} yLabel={"Current (ampere)"} />
+      </Grid>
+      <Grid item xs={12}>
+        <TrendCard title="Input Voltage" data={voltageIn} max={15} yLabel={"Voltage (volt)"} />
       </Grid>
       <Grid item xs={6}>
         <CurrentControlPanel />
