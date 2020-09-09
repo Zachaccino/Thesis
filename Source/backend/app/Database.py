@@ -1,7 +1,6 @@
 import pymongo
 import datetime
 
-
 # A class for interacting with database.
 class Database:
     def __init__(self, addr, username, password):
