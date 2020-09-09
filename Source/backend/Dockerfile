@@ -4,6 +4,7 @@ WORKDIR /usr/src/app
 
 COPY ./app/server.py .
 COPY ./app/wsgi.py .
+COPY ./app/database.py .
 COPY ./app/run.sh .
 
 EXPOSE 8000
