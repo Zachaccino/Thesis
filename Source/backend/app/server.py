@@ -5,21 +5,15 @@ import string
 import os
 from Database import Database
 
-
-# Getting Environments.
-server_address = os.environ.get("SERVER_ADDRESS")
-if not server_address:
-    exit(1)
-
 app = Flask(__name__)
 CORS(app)
 
 
 # Setting up DB.
+server_address = "0.0.0.0"
 db_address = 'mongodb://' + server_address + ':27017/'
 db = Database(db_address, "hyperlynk", "OnePurpleParrot")
 db.connect()
-print("init")
 db.init()
 
 
