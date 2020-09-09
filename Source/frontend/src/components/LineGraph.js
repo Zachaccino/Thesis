@@ -4,10 +4,8 @@ import WindowDimensions from './WindowDimensions'
 
 
 function LineGraph(props) {
-  const { _, height } = WindowDimensions();
-
   return (
-    <div style={{ height: 500 }}>
+    <div style={{ height: 300 }}>
       <ResponsiveLine
         data={props.data}
         margin={{ top: 10, right: 15, bottom: 50, left: 50 }}
@@ -20,7 +18,7 @@ function LineGraph(props) {
           tickSize: 5,
           tickPadding: 5,
           tickRotation: 0,
-          legend: 'Time (seconds before now)',
+          legend: 'Seconds before now',
           legendOffset: 36,
           legendPosition: 'middle'
         }}
@@ -45,7 +43,27 @@ function LineGraph(props) {
         pointLabelYOffset={-12}
         enableArea={true}
         useMesh={true}
-        legends={[]}
+        animate={false}
+        legends={[
+          {
+            anchor: 'bottom-right',
+            direction: 'row',
+            justify: false,
+            translateX: 0,
+            translateY: 45,
+            itemsSpacing: 0,
+            itemDirection: 'left-to-right',
+            itemWidth: 80,
+            itemHeight: 20,
+            itemOpacity: 0.75,
+            symbolSize: 12,
+            symbolShape: 'circle',
+            symbolBorderColor: 'rgba(0, 0, 0, .5)',
+            effects: [
+            
+            ]
+          }
+        ]}
       />
     </div>
   )

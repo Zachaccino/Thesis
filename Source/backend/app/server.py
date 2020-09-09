@@ -19,6 +19,7 @@ CORS(app)
 db_address = 'mongodb://' + server_address + ':27017/'
 db = Database(db_address, "hyperlynk", "OnePurpleParrot")
 db.connect()
+print("init")
 db.init()
 
 
@@ -168,4 +169,4 @@ def register_region():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8002)
+    app.run(debug=True, host='0.0.0.0', port=8000)

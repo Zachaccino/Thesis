@@ -18,7 +18,7 @@ class Database:
         self.db = self.client['hyperlynkdb']
 
     def init(self):
-        if self.region_exist('Awaiting Allocation'):
+        if not self.region_exist('Awaiting Allocation'):
             self.insert_region('Awaiting Allocation')
 
     def disconnect(self):
@@ -139,38 +139,38 @@ class Database:
 
     # Details
     def device_detail_graphs(self, device_id, n_latest_records=1):
-        c_ins = [{"id": "current_in", "data": []}]
-        v_ins = [{"id": "voltage_in", "data": []}]
-        c_outs = [{"id": "current_out", "data": []}]
-        v_outs = [{"id": "voltage_out", "data": []}]
-        p_ins = [{"id": "power_in", "data": []}]
-        p_outs = [{"id": "power_out", "data": []}]
+        ins = [{"id": "Current", "data": []}, {"id": "Voltage", "data": []}]
+        pwr_in = [{"id": "Power", "data": []}]
+        outs = [{"id": "Current", "data": []}, {"id": "Voltage", "data": []}]
+        pwr_out = [{"id": "Power", "data": []}]
+        efficiency = [{"id": "Efficiency", "data": []}]
         dev = self.find_device(device_id, n_latest_records)
         
         for t in dev['telemetries']:
-            c_ins[0]["data"].append(
-                {"x": len(c_ins[0]["data"]), "y": t["current_in"]})
-            v_ins[0]["data"].append(
-                {"x": len(v_ins[0]["data"]), "y": t["voltage_in"]})
-            c_outs[0]["data"].append(
-                {"x": len(c_outs[0]["data"]), "y": t["current_out"]})
-            v_outs[0]["data"].append(
-                {"x": len(v_outs[0]["data"]), "y": t["voltage_out"]})
-            p_ins[0]["data"].append(
-                {"x": len(p_ins[0]["data"]), "y": t["current_in"] * t["voltage_in"]})
-            p_outs[0]["data"].append(
-                {"x": len(p_outs[0]["data"]), "y": t["current_out"] * t["voltage_out"]})
+            ins[0]["data"].append(
+                {"x": n_latest_records-len(ins[0]["data"])-1, "y": t["current_in"]})
+            ins[1]["data"].append(
+                {"x": n_latest_records-len(ins[1]["data"])-1, "y": t["voltage_in"]})
+            outs[0]["data"].append(
+                {"x": n_latest_records-len(outs[0]["data"])-1, "y": t["current_out"]})
+            outs[1]["data"].append(
+                {"x": n_latest_records-len(outs[1]["data"])-1, "y": t["voltage_out"]})
+            pwr_in[0]["data"].append(
+                {"x": n_latest_records-len(pwr_in[0]["data"])-1, "y": t["current_in"] * t["voltage_in"]})
+            pwr_out[0]["data"].append(
+                {"x": n_latest_records-len(pwr_out[0]["data"])-1, "y": t["current_out"] * t["voltage_out"]})
+            efficiency[0]["data"].append(
+                {"x": n_latest_records-len(efficiency[0]["data"])-1, "y": (t["current_out"] * t["voltage_out"]) / (t["current_in"] * t["voltage_in"]) * 100})
 
         return {
             "device_id": dev["device_id"],
             "region": dev["region"],
             "status": dev["status"],
-            "current_in_graph": c_ins,
-            "voltage_in_graph": v_ins,
-            "power_in_graph": p_ins,
-            "current_out_graph": c_outs,
-            "voltage_out_graph": v_outs,
-            "power_out_graph": p_outs
+            "in_graph": ins,
+            "pwr_in_graph": pwr_in,
+            "out_graph": outs,
+            "pwr_out_graph": pwr_out,
+            "efficiency_graph": efficiency
         }
     
     def insert_event(self, device_id, event_code, event_value):

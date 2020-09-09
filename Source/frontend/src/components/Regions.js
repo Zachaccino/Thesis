@@ -20,6 +20,7 @@ function CardsForAllRegions() {
           setRegions(res.data["Payload"]["Regions"])
           setPowerIns(res.data["Payload"]["In"])
           setPowerOuts(res.data["Payload"]["Out"])
+          console.log(regions)
         });
     };
 

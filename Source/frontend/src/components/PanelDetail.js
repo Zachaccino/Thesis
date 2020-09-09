@@ -154,12 +154,11 @@ function PanelDetail(props) {
   let { panel } = useParams();
   const [region, setRegion] = useState("Loading");
   const [status, setStatus] = useState("Loading");
-  const [currentIn, setCurrentIn] = useState();
-  const [voltageIn, setVoltageIn] = useState();
-  const [powerIn, setPowerIn] = useState();
-  const [currentOut, setCurrentOut] = useState();
-  const [voltageOut, setVoltageOut] = useState();
-  const [powerOut, setPowerOut] = useState();
+  const [ins, setIns] = useState();
+  const [outs, setOuts] = useState();
+  const [pwrIn, setPwrIn] = useState();
+  const [pwrOut, setPwrOut] = useState();
+  const [efficiency, setEfficiency] = useState();
 
   useEffect(() => {
     const fetchData = () => {
@@ -167,12 +166,11 @@ function PanelDetail(props) {
         .then(res => {
           setRegion(res.data["Payload"]["region"])
           setStatus(res.data["Payload"]["status"])
-          setCurrentIn(res.data["Payload"]["current_in_graph"])
-          setVoltageIn(res.data["Payload"]["voltage_in_graph"])
-          setPowerIn(res.data["Payload"]["power_in_graph"])
-          setCurrentOut(res.data["Payload"]["current_out_graph"])
-          setVoltageOut(res.data["Payload"]["voltage_out_graph"])
-          setPowerOut(res.data["Payload"]["power_out_graph"])
+          setIns(res.data["Payload"]["in_graph"])
+          setPwrIn(res.data["Payload"]["pwr_in_graph"])
+          setOuts(res.data["Payload"]["out_graph"])
+          setPwrOut(res.data["Payload"]["pwr_out_graph"])
+          setEfficiency(res.data["Payload"]["efficiency_graph"])
         });
     };
 
@@ -200,23 +198,20 @@ function PanelDetail(props) {
       <Grid item xs={4}>
         <StatusCard title="Status" value={status} />
       </Grid>
-      <Grid item xs={12}>
-        <TrendCard title="Output Power" data={powerOut} max={250} yLabel={"Power (watt)"} />
+      <Grid item xs={6}>
+        <TrendCard title="Input Current and Voltage" data={ins} max={25} yLabel={"Current (A) / Voltage (V)"} />
+      </Grid>
+      <Grid item xs={6}>
+        <TrendCard title="Input Power" data={pwrIn} max={500} yLabel={"Power (watt)"} />
+      </Grid>
+      <Grid item xs={6}>
+        <TrendCard title="Output Current and Voltage" data={outs} max={25} yLabel={"Current (A) / Voltage (V)"} />
+      </Grid>
+      <Grid item xs={6}>
+        <TrendCard title="Output Power" data={pwrOut} max={500} yLabel={"Power (watt)"} />
       </Grid>
       <Grid item xs={12}>
-        <TrendCard title="Output Current" data={currentOut} max={15} yLabel={"Current (ampere)"} />
-      </Grid>
-      <Grid item xs={12}>
-        <TrendCard title="Outut Voltage" data={voltageOut} max={15} yLabel={"Voltage (volt)"} />
-      </Grid>
-      <Grid item xs={12}>
-        <TrendCard title="Input Power" data={powerIn} max={250} yLabel={"Power (watt)"} />
-      </Grid>
-      <Grid item xs={12}>
-        <TrendCard title="Input Current" data={currentIn} max={15} yLabel={"Current (ampere)"} />
-      </Grid>
-      <Grid item xs={12}>
-        <TrendCard title="Input Voltage" data={voltageIn} max={15} yLabel={"Voltage (volt)"} />
+        <TrendCard title="Efficiency" data={efficiency} max={100} yLabel={"Percentage"} />
       </Grid>
       <Grid item xs={6}>
         <CurrentControlPanel />
