@@ -4,7 +4,7 @@
             "GENERIC_AT3GPP.provide-default": true,
             "GENERIC_AT3GPP.tx": "D1",
             "GENERIC_AT3GPP.rx": "D0",
-            "target.network-default-interface-type": "WIFI",
+            "target.network-default-interface-type": "CELLULAR",
             "mbed-trace.enable": true,
             "lwip.ipv4-enabled": true,
             "lwip.ipv6-enabled": false,

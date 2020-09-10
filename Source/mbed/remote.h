@@ -23,8 +23,7 @@ public:
 
   // API End Points.
   pair<int, std::string> register_device(std::string id);
-  pair<int, std::string> add_telemetry(std::string id, double voltage,
-                                       double ampere);
+  pair<int, std::string> add_telemetry(std::string id, float v_out, float c_out, float v_in, float c_in);
 };
 
 #endif
