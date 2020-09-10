@@ -137,22 +137,25 @@ int main() {
         HttpRequest request = HttpRequest(iface, HTTP_POST, ("http://" + address + "/add_telemetry").c_str());
         request.set_header("Content-Type", "application/json");
         HttpResponse *response = request.send(json.c_str(), strlen(json.c_str()));
-        pair<int, std::string> result = make_pair(response->get_status_code(), response->get_body_as_string());
-        string csv = result.second;
-        string e = "";
-        size_t pos = 0;
-        int count = 0;
-        while ((pos = csv.find(",")) != std::string::npos) {
-            if (count % 2 == 0) {
-                e = csv.substr(0, pos);
-                csv.erase(0, pos + 1);
-            } else {
-                string v = csv.substr(0, pos);
-                csv.erase(0, pos + 1);
-                 printf("%s : %s\n", e.c_str(), v.c_str());
-            }
-            count++;
-        }
+        printf("Sent\n");
+        printf("%s\n", json.c_str());
+        printf("%d\n", response->get_status_code());
+        // pair<int, std::string> result = make_pair(response->get_status_code(), response->get_body_as_string());
+        // string csv = result.second;
+        // string e = "";
+        // size_t pos = 0;
+        // int count = 0;
+        // while ((pos = csv.find(",")) != std::string::npos) {
+        //     if (count % 2 == 0) {
+        //         e = csv.substr(0, pos);
+        //         csv.erase(0, pos + 1);
+        //     } else {
+        //         string v = csv.substr(0, pos);
+        //         csv.erase(0, pos + 1);
+        //          printf("%s : %s\n", e.c_str(), v.c_str());
+        //     }
+        //     count++;
+        // }
         ThisThread::sleep_for(1000);
     }
 
