@@ -25,7 +25,7 @@ import Overview from "./components/Overview";
 import Regions from './components/Regions'
 import Management from './components/Management'
 import Panels from './components/Panels';
-import PanelDetail from './components/PanelDetail'
+import PanelDetail from './components/PanelDetail';
 
 
 const drawerWidth = 240;

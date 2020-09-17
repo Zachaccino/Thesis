@@ -39,7 +39,7 @@ function TrendCard(props) {
         alignItems="stretch"
       >
         <Grid item>
-          <Typography variant="h6" color='textSecondary'>
+          <Typography variant="h6" color='textSecondary' style={{marginBottom:20}}>
             <Box fontWeight="fontWeightBold">
               {props.title}
             </Box>

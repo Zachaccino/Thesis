@@ -7,9 +7,18 @@
     "event_code":"String",
     "event_value":0.00
   }],
+  "telemetries_hourly": [{
+    "current_in":0.00,
+    "voltage_in":0.00,
+    "current_out":0.00,
+    "voltage_out":0.00,
+    "datetime":"Date"
+  }],
   "telemetries":[{
-    "current":0.00,
-    "voltage":0.00,
+    "current_in":0.00,
+    "voltage_in":0.00,
+    "current_out":0.00,
+    "voltage_out":0.00,
     "datetime":"Date"
   }]
 }

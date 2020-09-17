@@ -7,12 +7,28 @@
 #define VALUE_LENGTH 64
 
 
-AnalogIn voltageOutPin(A0);
-AnalogIn currentOutPin(A1);
-AnalogIn voltageInPin(A2);
-AnalogIn currentInPin(A3);
+AnalogIn DigitalVoltageIn(A0);       //  Set A0 for ADC of input voltage
+AnalogIn DigitalCurrentIn(A1);       //  Set A1 for ADC of input current
+AnalogIn DigitalVoltageOut(A2);      //  Set A2 for ADC of output voltage
+AnalogIn DigitalCurrentOut(A3);      //  Set A3 for ADC of output current
 NetworkInterface *iface;
 std::string address = "3.24.141.26:8000";
+float Vref = 3.06; 
+
+float RealVoltageIn = 0.0;      //  Input voltage
+float RealCurrentIn = 0.0;      //  Input current
+float RealVoltageOut = 0.0;     //  Output voltage
+float RealCurrentOut = 0.0;     //  Output current
+float PowerIn = 0.0;            //  Input power
+float PowerOut = 0.0;           //  Output power
+float Efficiency = 0.0;         //  Total efficiency
+int Index = 0;                  //  Counter index
+int DisplayRate = 10000;        //  Display results every 0.1 second
+int n = 1;                      //  Average calculation counter
+float AVGVoltageIn = 0.0;       //  Average input voltage
+float AVGCurrentIn = 0.0;       //  Average input current
+float AVGVoltageOut = 0.0;      //  Average output voltage
+float AVGCurrentOut = 0.0;      //  Average output current
 
 
 std::string id() {
@@ -36,22 +52,6 @@ void set_id(std::string id) {
   memset(value, 0, VALUE_LENGTH);
   strcpy(value, id.c_str());
   kv_set(key, value, strlen(value), 0);
-}
-
-float v_out() {
-    return 11*voltageInPin.read()*3.3f;
-}
-
-float c_out() {
-    return -13.515 * currentInPin.read()*3.3f + 38.859;
-}
-
-float v_in() {
-    return 11*voltageOutPin.read()*3.3f;
-}
-
-float c_in() {
-    return -5 * currentOutPin.read() * 3.3f + 12.665;
 }
 
 bool init() {
@@ -127,36 +127,68 @@ int main() {
     }
     
     while (true) {
-        // Sending telemetries and receiving event.
-        string json = "{\"device_id\": \"" + id() +
-                "\",\"voltage_in\":" + to_string(v_in()) +
-                ",\"current_in\":" + to_string(c_in()) + 
-                ",\"voltage_out\":" + to_string(v_out()) + 
-                ",\"current_out\":" + to_string(c_out()) + 
+        RealVoltageIn = 11 * DigitalVoltageIn.read() * Vref;   //  Voltage divider 10:1
+        RealCurrentIn   =   -(4.9031 * DigitalCurrentIn.read() * Vref * 3 / 2 - 12.414);    //  Input current using 10A sensor, voltage divider 1:2 applied, why negative?
+        RealVoltageOut  =   11 * DigitalVoltageOut.read() * Vref;    //  Voltage divider 10:1
+        RealCurrentOut  =   -10 * DigitalCurrentOut.read() * Vref +25;   //  Output current using new sensor, why negative?
+        Index++;
+        
+        if(Index == DisplayRate/5*n){
+            AVGVoltageIn = (AVGVoltageIn * (n-1) + RealVoltageIn)/n;    // Get average input voltage
+            AVGCurrentIn = (AVGCurrentIn * (n-1) + RealCurrentIn)/n;    // Get average input current
+            AVGVoltageOut = (AVGVoltageOut * (n-1) + RealVoltageOut)/n; // Get average output voltage
+            AVGCurrentOut = (AVGCurrentOut * (n-1) + RealCurrentOut)/n; // Get average output current
+            n++;
+        }
+
+        if(Index >= DisplayRate){
+            Index = 0;
+            n = 1;
+            
+            /* Clear negative values */
+            if(AVGVoltageIn < 0){
+                AVGVoltageIn = 0.0;
+            }
+            if(AVGCurrentIn < 0){
+                AVGCurrentIn = 0.0;
+            }
+            if(AVGVoltageOut < 0){
+                AVGVoltageOut = 0.0;
+            }
+            if(AVGCurrentOut < 0){
+                AVGCurrentOut = 0.0;
+            }
+            
+            /* Set the initial value of the current sensors to 0  */
+            if(AVGCurrentIn <= 12.414000 && AVGCurrentIn >= 12.4139){
+                AVGCurrentIn = 0.0;
+                AVGCurrentOut = 0.0;
+            }
+            PowerIn  = AVGVoltageIn * AVGCurrentIn;    //  Pin = Vin * Iin
+            PowerOut = AVGVoltageOut * AVGCurrentOut; //  Pout = Vout * Iout
+            Efficiency = PowerOut / PowerIn * 100;  //  Efficiency in percent
+
+            string json = "{\"device_id\": \"" + id() +
+                "\",\"voltage_in\":" + to_string(AVGVoltageIn) +
+                ",\"current_in\":" + to_string(AVGCurrentIn) + 
+                ",\"voltage_out\":" + to_string(AVGVoltageOut) + 
+                ",\"current_out\":" + to_string(AVGCurrentOut) + 
                 "}";
-        HttpRequest request = HttpRequest(iface, HTTP_POST, ("http://" + address + "/add_telemetry").c_str());
-        request.set_header("Content-Type", "application/json");
-        HttpResponse *response = request.send(json.c_str(), strlen(json.c_str()));
-        printf("Sent\n");
-        printf("%s\n", json.c_str());
-        printf("%d\n", response->get_status_code());
-        // pair<int, std::string> result = make_pair(response->get_status_code(), response->get_body_as_string());
-        // string csv = result.second;
-        // string e = "";
-        // size_t pos = 0;
-        // int count = 0;
-        // while ((pos = csv.find(",")) != std::string::npos) {
-        //     if (count % 2 == 0) {
-        //         e = csv.substr(0, pos);
-        //         csv.erase(0, pos + 1);
-        //     } else {
-        //         string v = csv.substr(0, pos);
-        //         csv.erase(0, pos + 1);
-        //          printf("%s : %s\n", e.c_str(), v.c_str());
-        //     }
-        //     count++;
-        // }
-        ThisThread::sleep_for(1000);
+            HttpRequest request = HttpRequest(iface, HTTP_POST, ("http://" + address + "/add_telemetry").c_str());
+            request.set_header("Content-Type", "application/json");
+            HttpResponse *response = request.send(json.c_str(), strlen(json.c_str()));
+            printf("Sent\n");
+            printf("%s\n", json.c_str());
+            printf("%d\n", response->get_status_code());
+            
+            /* Clear the average values */
+            AVGVoltageIn = 0.0;
+            AVGCurrentIn = 0.0;
+            AVGVoltageOut = 0.0;
+            AVGCurrentOut = 0.0;
+        }
+
+        wait_us(10);    //  Sampling rate 10kHz
     }
 
     // Clean up.
