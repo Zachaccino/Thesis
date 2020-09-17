@@ -1,110 +1,167 @@
-#include "controller.h"
 #include "mbed.h"
-#include "remote.h"
-#include "regulator.h"
+#include "KVStore.h"
+#include "kvstore_global_api.h"
+#include "http_request.h"
+#include <string>
+#define KEY_LENGTH 32
+#define VALUE_LENGTH 64
 
 
-Thread thread;
-double voltage_out;
-double current_out;
+AnalogIn voltageOutPin(A0);
+AnalogIn currentOutPin(A1);
+AnalogIn voltageInPin(A2);
+AnalogIn currentInPin(A3);
+NetworkInterface *iface;
+std::string address = "3.24.141.26:8000";
 
 
-// void monitor() {
-//     printf("Started.\n");
+std::string id() {
+  char key[KEY_LENGTH] = {"uid"};
+  kv_info_t kv_info;
 
-//     Controller device = Controller();
-//     Remote remote = Remote("192.168.1.14:8000");
+  if (kv_get_info(key, &kv_info) == MBED_SUCCESS) {
+    char value[kv_info.size + 1];
+    memset(value, 0, kv_info.size + 1);
+    size_t actual_size = 0;
+    kv_get(key, value, kv_info.size, &actual_size);
+    return std::string(value);
+  }
 
-//     // Setup and connect to Wi-fi or Cellular network.
-//     remote.init();
-//     remote.connect();
-//     printf("Connected.\n");
+  return "";
+}
 
-//     // Configure device.
-//     pair<int, std::string> response = remote.register_device(device.id());
+void set_id(std::string id) {
+  char key[KEY_LENGTH] = {"uid"};
+  char value[VALUE_LENGTH];
+  memset(value, 0, VALUE_LENGTH);
+  strcpy(value, id.c_str());
+  kv_set(key, value, strlen(value), 0);
+}
 
-//     if (response.first == 200) {
-//         device.set_id(response.second);
-//         printf("Device registration completed. Device ID is: %s\n", response.second.c_str());
-//     } else {
-//         remote.deinit();
-//         printf("Device registration failed.\n");
-//         return;
-//     }
-    
-//     while (true) {
-//         printf("Monitoring...\n");
-//         // Sending telemetries and receiving event.
-//         pair<int, std::string> response = remote.add_telemetry(device.id(), voltage_out, current_out);
-//         string csv = response.second;
-//         string e = "";
-//         size_t pos = 0;
-//         int count = 0;
-//         printf("Decrypting...\n");
+float v_out() {
+    return 11*voltageInPin.read()*3.3f;
+}
 
-//         while ((pos = csv.find(",")) != std::string::npos) {
-//             printf("Interpreting...\n");
-//             if (count % 2 == 0) {
-//                 e = csv.substr(0, pos);
-//                 csv.erase(0, pos + 1);
-//             } else {
-//                 string v = csv.substr(0, pos);
-//                 csv.erase(0, pos + 1);
-//                 printf("%s : %s\n", e.c_str(), v.c_str());
-//             }
-//             count++;
-//         }
-//         printf("Sleeping...\n");
-//         ThisThread::sleep_for(1000);
-//         printf("SleepingDone...\n");
-//     }
+float c_out() {
+    return -13.515 * currentInPin.read()*3.3f + 38.859;
+}
 
-//     // Clean up.
-//     printf("Cleaning up.\n");
-//     remote.deinit();
-//     printf("Shutting down.\n");
-// }
+float v_in() {
+    return 11*voltageOutPin.read()*3.3f;
+}
+
+float c_in() {
+    return -5 * currentOutPin.read() * 3.3f + 12.665;
+}
+
+bool init() {
+    iface = NetworkInterface::get_default_instance();
+    return iface ? true : false;
+}
+
+bool connect() {
+  int n_retry = 0;
+  int max_retry = 3;
+  bool connected = iface->get_connection_status() == NSAPI_STATUS_GLOBAL_UP;
+
+  while (!connected && n_retry < max_retry) {
+    iface->connect();
+    connected = iface->get_connection_status() == NSAPI_STATUS_GLOBAL_UP;
+    n_retry++;
+  }
+
+  return connected;
+}
+
+pair<int, ::string> send(std::string json, http_method method,
+                                       std::string endpoint) {
+    HttpRequest request = HttpRequest(iface, method, endpoint.c_str());
+    request.set_header("Content-Type", "application/json");
+    HttpResponse *response = request.send(json.c_str(), strlen(json.c_str()));
+    pair<int, std::string> result =
+        make_pair(response->get_status_code(), response->get_body_as_string());
+    delete response;
+    return result;
+}
+
+void deinit() {
+  iface->disconnect();
+  delete iface;
+  iface = NULL;
+}
+
+pair<int, std::string> register_device(std::string id) {
+  string json = "{\"device_id\": \"" + id + "\"}";
+  return send(json, HTTP_POST, "http://" + address + "/register_device");
+}
+
+pair<int, std::string> add_telemetry(std::string id, float v_out, float c_out, float v_in, float c_in) {
+  string json = "{\"device_id\": \"" + id +
+                "\",\"voltage_in\":" + to_string(v_in) +
+                ",\"current_in\":" + to_string(c_in) + 
+                ",\"voltage_out\":" + to_string(v_out) + 
+                ",\"current_out\":" + to_string(c_out) + 
+                "}";
+  return send(json, HTTP_POST, "http://" + address + "/add_telemetry");
+}
 
 
 int main() {
-    //thread.start(monitor);
+    printf("Started.\n");
 
-    Regulator regulator = Regulator();
+    // Setup and connect to Wi-fi or Cellular network.
+    init();
+    connect();
+    printf("Connected.\n");
 
-    // Init.
-    regulator.stage_one_init();
-    regulator.stage_two_init();
-    printf("Initialised...\n");
+    // Configure device.
+    pair<int, std::string> response = register_device(id());
 
-    // Set starting power targets.
-    regulator.change_frequency(100000);
-    regulator.change_duty(0.4);
-    regulator.commit_changes();
-    printf("Initial Power Target is Set...\n");
-
-    // Change state every 5 seconds.
-    int cycles = 0;
-    int max_cycles = 50;
-    double delta_freq = 5000;
-    double delta_duty = 0.2;
-
-    // Testing if it can change duty and frequency on the fly.
+    if (response.first == 200) {
+        set_id(response.second);
+        printf("Device registration completed. Device ID is: %s\n", response.second.c_str());
+    } else {
+        deinit();
+        printf("Device registration failed.\n");
+        return 1;
+    }
+    
     while (true) {
-        // Either increase or decrease the frequency and duty after 50 cycles. (or 5 seconds)
-        if (cycles >= max_cycles) {
-            cycles = 0;
-            regulator.change_frequency(100000 + delta_freq);
-            regulator.change_duty(0.4 + delta_duty);
-            regulator.commit_changes();
-            delta_duty *= -1;
-            delta_freq *= -1;
-        }
-        regulator.regulate_voltage();
-        voltage_out = regulator.voltage_out();
-        current_out = regulator.current_out();
-        wait_us(100);
-        cycles++;
+        // Sending telemetries and receiving event.
+        string json = "{\"device_id\": \"" + id() +
+                "\",\"voltage_in\":" + to_string(v_in()) +
+                ",\"current_in\":" + to_string(c_in()) + 
+                ",\"voltage_out\":" + to_string(v_out()) + 
+                ",\"current_out\":" + to_string(c_out()) + 
+                "}";
+        HttpRequest request = HttpRequest(iface, HTTP_POST, ("http://" + address + "/add_telemetry").c_str());
+        request.set_header("Content-Type", "application/json");
+        HttpResponse *response = request.send(json.c_str(), strlen(json.c_str()));
+        printf("Sent\n");
+        printf("%s\n", json.c_str());
+        printf("%d\n", response->get_status_code());
+        // pair<int, std::string> result = make_pair(response->get_status_code(), response->get_body_as_string());
+        // string csv = result.second;
+        // string e = "";
+        // size_t pos = 0;
+        // int count = 0;
+        // while ((pos = csv.find(",")) != std::string::npos) {
+        //     if (count % 2 == 0) {
+        //         e = csv.substr(0, pos);
+        //         csv.erase(0, pos + 1);
+        //     } else {
+        //         string v = csv.substr(0, pos);
+        //         csv.erase(0, pos + 1);
+        //          printf("%s : %s\n", e.c_str(), v.c_str());
+        //     }
+        //     count++;
+        // }
+        ThisThread::sleep_for(1000);
     }
 
+    // Clean up.
+    printf("Cleaning up.\n");
+    deinit();
+    printf("Shutting down.\n");
     return 0;
 }
