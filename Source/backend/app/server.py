@@ -10,7 +10,7 @@ CORS(app)
 
 
 # Setting up DB.
-server_address = "0.0.0.0"
+server_address = "3.24.141.26"
 db_address = 'mongodb://' + server_address + ':27017/'
 db = Database(db_address, "hyperlynk", "OnePurpleParrot")
 db.connect()

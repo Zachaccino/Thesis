@@ -159,7 +159,7 @@ class Database:
             pwr_out[0]["data"].append(
                 {"x": n_latest_records-len(pwr_out[0]["data"])-1, "y": t["current_out"] * t["voltage_out"]})
             efficiency[0]["data"].append(
-                {"x": n_latest_records-len(efficiency[0]["data"])-1, "y": (t["current_out"] * t["voltage_out"]) / (t["current_in"] * t["voltage_in"]) * 100})
+                {"x": n_latest_records-len(efficiency[0]["data"])-1, "y": (t["current_out"] * t["voltage_out"]) / (t["current_in"] * t["voltage_in"]+0.00001) * 100})
 
         return {
             "device_id": dev["device_id"],
