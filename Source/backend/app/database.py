@@ -52,16 +52,16 @@ class Database:
 
     # Lenses and Simple Computations
     def current_out(self, device, time=-1):
-        return device['telemetries'][time]['current_out'] if device['telemetries'] else 0
+        return device['aggregate_telemetries'][time]['current_out'] if device['aggregate_telemetries'] else 0
 
     def voltage_out(self, device, time=-1):
-        return device['telemetries'][time]['voltage_out'] if device['telemetries'] else 0
+        return device['aggregate_telemetries'][time]['voltage_out'] if device['aggregate_telemetries'] else 0
 
     def current_in(self, device, time=-1):
-        return device["telemetries"][time]["current_in"] if device['telemetries'] else 0
+        return device["aggregate_telemetries"][time]["current_in"] if device['aggregate_telemetries'] else 0
 
     def voltage_in(self, device, time=-1):
-        return device['telemetries'][time]['voltage_in'] if device['telemetries'] else 0
+        return device['aggregate_telemetries'][time]['voltage_in'] if device['aggregate_telemetries'] else 0
 
     def power_out(self, device, time=-1):
         return self.current_out(device, time) * self.voltage_out(device, time)
@@ -76,35 +76,22 @@ class Database:
         if region_name:
             return self.db.devices.find(
                 {'region': region_name},
-                {'telemetries': {'$slice': -n_latest_records}}
+                {'aggregate_telemetries': {'$slice': -n_latest_records}}
             )
         else:
             return self.db.devices.find(
                 {},
-                {'telemetries': {'$slice': -n_latest_records}}
+                {'aggregate_telemetries': {'$slice': -n_latest_records}}
             )
     
-    def find_device(self, device_id, n_latest_records=1):
+    def find_device(self, device_id, aggregation=True, n_latest_records=1):
+        tag = "aggregate_telemetries" if aggregation else "telemetries"
         return self.db.devices.find_one(
             {"device_id": device_id},
-            {'telemetries': {'$slice': -n_latest_records}}
+            {
+                tag: {'$slice': -n_latest_records},
+            }
         )
-
-    
-
-    
-
-    # def failure_percentage(self):
-    #     on = self.count_operating()
-    #     off = self.count_offline()
-    #     fail = self.count_failure()
-    #     total = on + off + fail
-
-    #     if total == 0:
-    #         return 0
-    #     else:
-    #         return round(fail/total*100, 2)
-
 
     # Power
     def total_power(self, region_name=None):
@@ -137,38 +124,56 @@ class Database:
         return device_ids, pwr_ins, pwr_outs
 
     # Details
-    def device_detail_graphs(self, device_id, n_latest_records=1):
-        ins = [{"id": "Current", "data": []}, {"id": "Voltage", "data": []}]
-        pwr_in = [{"id": "Power", "data": []}]
-        outs = [{"id": "Current", "data": []}, {"id": "Voltage", "data": []}]
-        pwr_out = [{"id": "Power", "data": []}]
-        efficiency = [{"id": "Efficiency", "data": []}]
-        dev = self.find_device(device_id, n_latest_records)
+    def basic_graph(self, label, size, prefix="", postfix=""):
+        graph = [{"id": label, "data": []}]
+        for i in range(size):
+            graph[0]["data"].append({"x": prefix + str(i) + postfix, "y": 0})
+        return graph
+    
+    def stack_graph(self, graph1, graph2):
+        return graph1 + graph2
+
+    def set_point(self, graph, index, y, stack=0, x=None):
+        graph[stack]["data"][index]["y"] = y
+        if x:
+            graph[stack]["data"][index]["x"] = x
+
+
+    def device_detail_graphs(self, device_id, aggregation=False, n_latest_records=1):
+        postfix = "th Sample (DEBUG MODE)"
+        if aggregation:
+            postfix = " minutes from now"
+
+        current = self.stack_graph(self.basic_graph("Input", n_latest_records, postfix=postfix), self.basic_graph("Output", n_latest_records, postfix=postfix))
+        pwr = self.stack_graph(self.basic_graph("Input", n_latest_records, postfix=postfix), self.basic_graph("Output", n_latest_records, postfix=postfix))
+        voltage = self.stack_graph(self.basic_graph("Input", n_latest_records, postfix=postfix), self.basic_graph("Output", n_latest_records, postfix=postfix))
+        efficiency = self.basic_graph("Efficiency", n_latest_records, postfix=postfix)
+
+
+        dev = self.find_device(device_id, aggregation, n_latest_records)
+        tag = "aggregate_telemetries" if aggregation else "telemetries"
+        index = n_latest_records-1
+
+        if len(dev[tag]) < n_latest_records:
+            index = len(dev[tag])-1
         
-        for t in dev['telemetries']:
-            ins[0]["data"].append(
-                {"x": n_latest_records-len(ins[0]["data"])-1, "y": t["current_in"]})
-            ins[1]["data"].append(
-                {"x": n_latest_records-len(ins[1]["data"])-1, "y": t["voltage_in"]})
-            outs[0]["data"].append(
-                {"x": n_latest_records-len(outs[0]["data"])-1, "y": t["current_out"]})
-            outs[1]["data"].append(
-                {"x": n_latest_records-len(outs[1]["data"])-1, "y": t["voltage_out"]})
-            pwr_in[0]["data"].append(
-                {"x": n_latest_records-len(pwr_in[0]["data"])-1, "y": t["current_in"] * t["voltage_in"]})
-            pwr_out[0]["data"].append(
-                {"x": n_latest_records-len(pwr_out[0]["data"])-1, "y": t["current_out"] * t["voltage_out"]})
-            efficiency[0]["data"].append(
-                {"x": n_latest_records-len(efficiency[0]["data"])-1, "y": (t["current_out"] * t["voltage_out"]) / (t["current_in"] * t["voltage_in"]+0.00001) * 100})
+        for t in dev[tag]:
+            self.set_point(current, index, round(t["current_in"], 2), 0)
+            self.set_point(current, index, round(t["current_out"], 2), 1)
+            self.set_point(voltage, index, round(t["voltage_in"], 2), 0)
+            self.set_point(voltage, index, round(t["voltage_out"], 2), 1)
+            self.set_point(pwr, index, round(t["current_in"] * t["voltage_in"], 2), 0)
+            self.set_point(pwr, index, round(t["current_out"] * t["voltage_out"], 2), 1)
+            self.set_point(efficiency, index, round((t["current_out"] * t["voltage_out"]) / (t["current_in"] * t["voltage_in"]+0.00001) * 100, 2))
+            index -= 1
 
         return {
             "device_id": dev["device_id"],
             "region": dev["region"],
             "status": dev["status"],
-            "in_graph": ins,
-            "pwr_in_graph": pwr_in,
-            "out_graph": outs,
-            "pwr_out_graph": pwr_out,
+            "current_graph": current,
+            "voltage_graph": voltage,
+            "pwr_graph": pwr,
             "efficiency_graph": efficiency
         }
     
@@ -240,6 +245,7 @@ class Database:
             'device_id': new_id,
             'status': "Online",
             'events': [],
+            'aggregate_telemetries': [],
             'telemetries': [],
             'region': "Awaiting Allocation",
             'last_modified': datetime.datetime.utcnow()

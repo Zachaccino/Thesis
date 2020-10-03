@@ -82,7 +82,7 @@ function SliderControlPanel(name, def, step, min, max, event_code) {
   )
 }
 
-function SwitchControlPanel(name, action, event_code, event_value) {
+function SwitchControlPanel(name, action, desc, event_code, event_value) {
   const classes = useStyles();
   let { panel } = useParams();
 
@@ -108,7 +108,7 @@ function SwitchControlPanel(name, action, event_code, event_value) {
         <Grid item>
           <Typography variant="subtitle1" color='textSecondary'>
             <Box fontWeight="fontWeightBold">
-              This will shutdown the power converter.
+              {desc}
             </Box>
           </Typography>
         </Grid>
@@ -121,7 +121,7 @@ function SwitchControlPanel(name, action, event_code, event_value) {
           >
             <Grid item>
               <Button variant="contained" color="primary" onClick={pushEvent}>
-                Shutdown
+                {action}
               </Button>
             </Grid>
           </Grid>
@@ -130,7 +130,6 @@ function SwitchControlPanel(name, action, event_code, event_value) {
     </Paper>
   )
 }
-
 
 function CurrentControlPanel() {
   return (
@@ -146,7 +145,7 @@ function VoltageControlPanel() {
 
 function PowerControlPanel() {
   return (
-    SwitchControlPanel("Power Setting", "Shutdown", "powerdown", 1)
+    SwitchControlPanel("Power Setting", "Shutdown", "This will shutdown the power converter.", "powerdown", 1)
   )
 }
 
@@ -154,22 +153,77 @@ function PanelDetail(props) {
   let { panel } = useParams();
   const [region, setRegion] = useState("Loading");
   const [status, setStatus] = useState("Loading");
-  const [ins, setIns] = useState();
-  const [outs, setOuts] = useState();
-  const [pwrIn, setPwrIn] = useState();
-  const [pwrOut, setPwrOut] = useState();
+  const [aggregation, setAggregation] = useState(true);
+  const [current, setCurrent] = useState();
+  const [voltage, setVoltage] = useState();
+  const [pwr, setPwr] = useState();
   const [efficiency, setEfficiency] = useState();
+  const [refreshPeriod, setRefreshPeriod] = useState(1000*10);
+
+  function AggregationSwitch(name, action) {
+    const classes = useStyles();
+    let { panel } = useParams();
+  
+    const toggleAggregationMode = () => {
+      if (aggregation) {
+        setAggregation(false)
+        setRefreshPeriod(1000)
+      } else {
+        setAggregation(true)
+        setRefreshPeriod(1000*10)
+      }
+    }
+  
+    return (
+      <Paper variant="outlined" className={classes.paper}>
+        <Grid
+          container
+          direction="column"
+          justify="center"
+          alignItems="stretch"
+        >
+          <Grid item>
+            <Typography variant="h6" color='textSecondary'>
+              <Box fontWeight="fontWeightBold">
+                Data Aggregation
+              </Box>
+            </Typography>
+          </Grid>
+          <Grid item>
+            <Typography variant="subtitle1" color='textSecondary'>
+              <Box fontWeight="fontWeightBold">
+                Toggle between showing data sampled every second or every minute.
+              </Box>
+            </Typography>
+          </Grid>
+          <Grid item>
+            <Grid
+              container
+              direction="column"
+              justify="center"
+              alignItems="flex-end"
+            >
+              <Grid item>
+                <Button variant="contained" color="primary" onClick={toggleAggregationMode}>
+                  Toggle
+                </Button>
+              </Grid>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Paper>
+    )
+  }
 
   useEffect(() => {
     const fetchData = () => {
-      axios.post(RemoteServer() + '/panel_detail', { "device_id": panel })
+      axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": aggregation})
         .then(res => {
           setRegion(res.data["Payload"]["region"])
           setStatus(res.data["Payload"]["status"])
-          setIns(res.data["Payload"]["in_graph"])
-          setPwrIn(res.data["Payload"]["pwr_in_graph"])
-          setOuts(res.data["Payload"]["out_graph"])
-          setPwrOut(res.data["Payload"]["pwr_out_graph"])
+          setCurrent(res.data["Payload"]["current_graph"])
+          setVoltage(res.data["Payload"]["voltage_graph"])
+          setPwr(res.data["Payload"]["pwr_graph"])
           setEfficiency(res.data["Payload"]["efficiency_graph"])
         });
     };
@@ -178,16 +232,16 @@ function PanelDetail(props) {
 
     const interval = setInterval(() => {
       fetchData();
-    }, 1000);
+    }, refreshPeriod);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [aggregation, refreshPeriod]);
 
 
   return (
     <Grid container spacing={3}>
       <Grid item xs={12}>
-        <ContentTitle title={"Device Control Panel"} />
+        <ContentTitle title={"Device Information"} />
       </Grid>
       <Grid item xs={4}>
         <StatusCard title="Device ID" value={panel} />
@@ -198,20 +252,23 @@ function PanelDetail(props) {
       <Grid item xs={4}>
         <StatusCard title="Status" value={status} />
       </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Input Current and Voltage" data={ins} max={25} yLabel={"Current (A) / Voltage (V)"} />
+      <Grid item xs={12}>
+        <ContentTitle title={"Statistics"} />
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Input Power" data={pwrIn} max={500} yLabel={"Power (watt)"} />
+        <TrendCard title="Current" data={current} max={10} yLabel={"Current (A)"} />
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Output Current and Voltage" data={outs} max={25} yLabel={"Current (A) / Voltage (V)"} />
+        <TrendCard title="Voltage" data={voltage} max={35} yLabel={"Voltage (V)"} />
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Output Power" data={pwrOut} max={500} yLabel={"Power (watt)"} />
+        <TrendCard title="Power" data={pwr} max={260} yLabel={"Power (watt)"} />
+      </Grid>
+      <Grid item xs={6}>
+        <TrendCard title="Efficiency" data={efficiency} max={100} yLabel={"Percentage"} />
       </Grid>
       <Grid item xs={12}>
-        <TrendCard title="Efficiency" data={efficiency} max={100} yLabel={"Percentage"} />
+        <ContentTitle title={"Control Panel"} />
       </Grid>
       <Grid item xs={6}>
         <CurrentControlPanel />
@@ -221,6 +278,9 @@ function PanelDetail(props) {
       </Grid>
       <Grid item xs={12}>
         <PowerControlPanel />
+      </Grid>
+      <Grid item xs={12}>
+        <AggregationSwitch />
       </Grid>
     </Grid>
   )

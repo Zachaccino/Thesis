@@ -5,12 +5,19 @@ import string
 import os
 from database import Database
 
+
 app = Flask(__name__)
 CORS(app)
 
 
+# Setting Switch
+deploy = True
+development_address = "127.0.0.1"
+deployment_address = "3.24.141.26"
+server_address = deployment_address if deploy else development_address
+
+
 # Setting up DB.
-server_address = "3.24.141.26"
 db_address = 'mongodb://' + server_address + ':27017/'
 db = Database(db_address, "hyperlynk", "OnePurpleParrot")
 db.connect()
@@ -72,11 +79,11 @@ def panels():
 @app.route('/panel_detail', methods=['POST'])
 def panel_detail():
     device_id = request.json['device_id']
-
+    aggregation = request.json['aggregation']
     if not db.device_exist(device_id):
         return response("Device doest not exists.")
 
-    return response("", db.device_detail_graphs(device_id, 30))
+    return response("", db.device_detail_graphs(device_id, aggregation, 240))
 
 
 # Event
