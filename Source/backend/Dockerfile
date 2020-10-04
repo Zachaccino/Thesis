@@ -12,8 +12,9 @@ EXPOSE 8000
 RUN chmod +x ./run.sh
 RUN pip install flask
 RUN pip install flask_cors
-RUN pip install flask_sqlalchemy
+RUN pip install rq
 RUN pip install pymongo
 RUN pip install gunicorn
+RUN pip install pulsar-client
 
 CMD [ "./run.sh" ]

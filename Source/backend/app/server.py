@@ -4,24 +4,31 @@ import random
 import string
 import os
 from database import Database
+from redis import Redis
+from rq import Queue
+from async_worker import *
+import time
+import pulsar
 
 
 app = Flask(__name__)
 CORS(app)
 
 
-# Setting Switch
-deploy = True
+# Static Settings
+deploy = False
 development_address = "127.0.0.1"
 deployment_address = "3.24.141.26"
 server_address = deployment_address if deploy else development_address
 
-
-# Setting up DB.
+# Setting up Mongo DB.
 db_address = 'mongodb://' + server_address + ':27017/'
 db = Database(db_address, "hyperlynk", "OnePurpleParrot")
 db.connect()
 db.init()
+
+# Setting up Redis Async Job Queue.
+q = Queue(connection=Redis(server_address, 6379))
 
 
 # Generate a random device id.
@@ -92,12 +99,8 @@ def push_event():
     device_id = request.json['device_id']
     event_code = request.json['event_code']
     event_value = float(request.json['event_value'])
-
-    if not db.device_exist(device_id):
-        return "Failed. Device not exists."
-
-    db.insert_event(device_id, event_code, event_value)
-    return "Successfuly added."
+    q.enqueue(push_event_worker, server_address, device_id, event_code, event_value)
+    return "OK"
 
 
 # Telemetry
@@ -108,12 +111,9 @@ def add_telemetry():
     voltage_in = float(request.json['voltage_in'])
     current_out = float(request.json['current_out'])
     voltage_out = float(request.json['voltage_out'])
-
-    if not db.device_exist(device_id):
-        return ""
-    
-    db.insert_telemetry(device_id, current_in, voltage_in, current_out, voltage_out)
-    return db.serialise_events(device_id)
+    q.enqueue(add_telemetry_worker, args=(server_address, device_id, current_in, voltage_in, current_out, voltage_out))
+    events = db.serialise_events(device_id)
+    return events
 
 
 # Device Management

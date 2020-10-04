@@ -8,6 +8,8 @@ echo "[6] All"
 echo "[7] Remove All"
 read INDEX
 
+#docker run --name=redis --publish=6379:6379 --hostname=redis --restart=on-failure --detach redis:latest
+#docker run -it -p 6650:6650 -p 8080:8080 --detach apachepulsar/pulsar:2.6.1 bin/pulsar standalone
 
 if [ $INDEX = "1" ] || [ $INDEX = "6" ]; then
     docker run -d -p 27017:27017 --name mongodb -e MONGO_INITDB_ROOT_USERNAME="hyperlynk" -e MONGO_INITDB_ROOT_PASSWORD="OnePurpleParrot" mongo
