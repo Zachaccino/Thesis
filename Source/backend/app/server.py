@@ -6,7 +6,7 @@ import os
 from database import Database
 from redis import Redis
 from rq import Queue
-from async_worker import *
+from worker import *
 import time
 import pulsar
 
