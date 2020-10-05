@@ -38,4 +38,4 @@ def disconnect(sid):
     print('disconnected from server')
 
 web.run_app(wa, host=SERVER_ADDRESS, port=SERVER_PORT+sock_id)
-sender.send(json.dumps({"TYPE": "DISCONN", "SOCK_ID": sock_id}).cencode('utf-8'))
+sender.send(json.dumps({"TYPE": "DISCONN", "SOCK_ID": sock_id}).encode('utf-8'))
