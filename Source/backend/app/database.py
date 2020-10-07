@@ -140,9 +140,11 @@ class Database:
 
 
     def device_detail_graphs(self, device_id, aggregation=False, n_latest_records=1):
-        postfix = "th Sample (DEBUG MODE)"
-        if aggregation:
-            postfix = " minutes from now"
+        postfix = " minutes from now"
+        if not aggregation:
+            postfix = "th Sample (DEBUG MODE)"
+            n_latest_records = 60
+            
 
         current = self.stack_graph(self.basic_graph("Input", n_latest_records, postfix=postfix), self.basic_graph("Output", n_latest_records, postfix=postfix))
         pwr = self.stack_graph(self.basic_graph("Input", n_latest_records, postfix=postfix), self.basic_graph("Output", n_latest_records, postfix=postfix))

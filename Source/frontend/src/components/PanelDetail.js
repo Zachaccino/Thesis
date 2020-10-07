@@ -156,116 +156,68 @@ function PanelDetail(props) {
   let { panel } = useParams();
   const [region, setRegion] = useState("Loading");
   const [status, setStatus] = useState("Loading");
-  const [aggregation, setAggregation] = useState(true);
-  const [current, setCurrent] = useState();
-  const [voltage, setVoltage] = useState();
-  const [pwr, setPwr] = useState();
-  const [efficiency, setEfficiency] = useState();
-  const [refreshPeriod, setRefreshPeriod] = useState(1000*10);
-  const [loading, setLoading] = useState(true);
+
+  const [realtimeCurrent, setRealtimeCurrent] = useState();
+  const [realtimeVoltage, setRealtimeVoltage] = useState();
+  const [realtimePwr, setRealtimePwr] = useState();
+  const [realtimeEfficiency, setRealtimeEfficiency] = useState();
+
+  const [aggregateCurrent, setAggregateCurrent] = useState();
+  const [aggregateVoltage, setAggregateVoltage] = useState();
+  const [aggregatePwr, setAggregatePwr] = useState();
+  const [aggregateEfficiency, setAggregateEfficiency] = useState();
 
   const socket = openSocket(RemoteSocket());
-  const [realData, setRealData] = useState({});
-  const [aggrData, setAggrData] = useState({});
-
-  function AggregationSwitch(name, action) {
-    const classes = useStyles();
-    let { panel } = useParams();
-  
-    const toggleAggregationMode = () => {
-      if (aggregation) {
-        setAggregation(false)
-      } else {
-        setAggregation(true)
-      }
-    }
-  
-    return (
-      <Paper variant="outlined" className={classes.paper}>
-        <Grid
-          container
-          direction="column"
-          justify="center"
-          alignItems="stretch"
-        >
-          <Grid item>
-            <Typography variant="h6" color='textSecondary'>
-              <Box fontWeight="fontWeightBold">
-                Data Aggregation
-              </Box>
-            </Typography>
-          </Grid>
-          <Grid item>
-            <Typography variant="subtitle1" color='textSecondary'>
-              <Box fontWeight="fontWeightBold">
-                Toggle between showing data sampled every second or every minute.
-              </Box>
-            </Typography>
-          </Grid>
-          <Grid item>
-            <Grid
-              container
-              direction="column"
-              justify="center"
-              alignItems="flex-end"
-            >
-              <Grid item>
-                <Button variant="contained" color="primary" onClick={toggleAggregationMode}>
-                  Toggle
-                </Button>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Paper>
-    )
-  }
   
   useEffect(() => {
-    axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": true})
-      .then(res => {
-        setAggrData(res.data)
-      });
-    axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": false})
-      .then(res => {
-        setRealData(res.data)
-      });
-    setLoading(false);
-  }, [aggregation]);
+    const fetchRealtimeData = () => {
+      axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": false})
+        .then(res => {
+          setRegion(res.data["Payload"]["region"])
+          setStatus(res.data["Payload"]["status"])
+          setRealtimeCurrent(res.data["Payload"]["current_graph"])
+          setRealtimeVoltage(res.data["Payload"]["voltage_graph"])
+          setRealtimePwr(res.data["Payload"]["pwr_graph"])
+          setRealtimeEfficiency(res.data["Payload"]["efficiency_graph"])
+        });
+    };
+
+    const fetchAggregateData = () => {
+      axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": true})
+        .then(res => {
+          setRegion(res.data["Payload"]["region"])
+          setStatus(res.data["Payload"]["status"])
+          setAggregateCurrent(res.data["Payload"]["current_graph"])
+          setAggregateVoltage(res.data["Payload"]["voltage_graph"])
+          setAggregatePwr(res.data["Payload"]["pwr_graph"])
+          setAggregateEfficiency(res.data["Payload"]["efficiency_graph"])
+        });
+    };
+
+    fetchRealtimeData();
+    fetchAggregateData();
+
+  }, []);
 
   useEffect(() => {
     socket.emit('frontend_connect', {'content': panel})
     socket.on('aggregate_update', (data) => {
-      setAggrData(data);
+      setRegion(data["Payload"]["region"])
+      setStatus(data["Payload"]["status"])
+      setAggregateCurrent(data["Payload"]["current_graph"])
+      setAggregateVoltage(data["Payload"]["voltage_graph"])
+      setAggregatePwr(data["Payload"]["pwr_graph"])
+      setAggregateEfficiency(data["Payload"]["efficiency_graph"])
     });
     socket.on('realtime_update', (data) => {
-      setRealData(data);
+      setRegion(data["Payload"]["region"])
+      setStatus(data["Payload"]["status"])
+      setRealtimeCurrent(data["Payload"]["current_graph"])
+      setRealtimeVoltage(data["Payload"]["voltage_graph"])
+      setRealtimePwr(data["Payload"]["pwr_graph"])
+      setRealtimeEfficiency(data["Payload"]["efficiency_graph"])
     });
   }, []);
-
-  useEffect(() => {
-    if (!aggregation && !loading) {
-      setRegion(realData["Payload"]["region"])
-      setStatus(realData["Payload"]["status"])
-      setCurrent(realData["Payload"]["current_graph"])
-      setVoltage(realData["Payload"]["voltage_graph"])
-      setPwr(realData["Payload"]["pwr_graph"])
-      setEfficiency(realData["Payload"]["efficiency_graph"])
-    }
-  }, [realData, aggregation]);
-
-  useEffect(() => {
-    if (aggregation && !loading) {
-      setRegion(aggrData["Payload"]["region"])
-      setStatus(aggrData["Payload"]["status"])
-      setCurrent(aggrData["Payload"]["current_graph"])
-      setVoltage(aggrData["Payload"]["voltage_graph"])
-      setPwr(aggrData["Payload"]["pwr_graph"])
-      setEfficiency(aggrData["Payload"]["efficiency_graph"])
-    }
-  }, [aggrData, aggregation]);
-
-
 
 
   return (
@@ -283,19 +235,34 @@ function PanelDetail(props) {
         <StatusCard title="Status" value={status} />
       </Grid>
       <Grid item xs={12}>
-        <ContentTitle title={"Statistics"} />
+        <ContentTitle title={"Aggregate Statistics"} />
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Current" data={current} max={10} yLabel={"Current (A)"} />
+        <TrendCard title="Current" data={aggregateCurrent} max={10} yLabel={"Current (A)"} />
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Voltage" data={voltage} max={35} yLabel={"Voltage (V)"} />
+        <TrendCard title="Voltage" data={aggregateVoltage} max={35} yLabel={"Voltage (V)"} />
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Power" data={pwr} max={260} yLabel={"Power (watt)"} />
+        <TrendCard title="Power" data={aggregatePwr} max={260} yLabel={"Power (watt)"} />
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Efficiency" data={efficiency} max={100} yLabel={"Percentage"} />
+        <TrendCard title="Efficiency" data={aggregateEfficiency} max={100} yLabel={"Percentage"} />
+      </Grid>
+      <Grid item xs={12}>
+        <ContentTitle title={"Realtime Statistics"} />
+      </Grid>
+      <Grid item xs={6}>
+        <TrendCard title="Current" data={realtimeCurrent} max={10} yLabel={"Current (A)"} />
+      </Grid>
+      <Grid item xs={6}>
+        <TrendCard title="Voltage" data={realtimeVoltage} max={35} yLabel={"Voltage (V)"} />
+      </Grid>
+      <Grid item xs={6}>
+        <TrendCard title="Power" data={realtimePwr} max={260} yLabel={"Power (watt)"} />
+      </Grid>
+      <Grid item xs={6}>
+        <TrendCard title="Efficiency" data={realtimeEfficiency} max={100} yLabel={"Percentage"} />
       </Grid>
       <Grid item xs={12}>
         <ContentTitle title={"Control Panel"} />
@@ -308,9 +275,6 @@ function PanelDetail(props) {
       </Grid>
       <Grid item xs={12}>
         <PowerControlPanel />
-      </Grid>
-      <Grid item xs={12}>
-        <AggregationSwitch />
       </Grid>
     </Grid>
   )
