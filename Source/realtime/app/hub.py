@@ -1,6 +1,5 @@
 from settings import PULSAR_ADDRESS, SERVER_ADDRESS, SERVER_PORT, NUMBER_OF_SOCKETS
 import pulsar
-from aiohttp import web
 import socketio
 import json 
 import requests
@@ -29,6 +28,7 @@ for i in range(NUMBER_OF_SOCKETS):
 # Synchronise connection tracker state
 def conntrack_sync(sock_id, state):
     conntrack[sock_id] = state
+    print(conntrack)
 
 
 # Received an aggregated update.
@@ -60,6 +60,7 @@ def realtime_update_available(content_id):
     else:
         telemetry = None
         for sock_id in conntrack:
+            print("SENDING UPDATE TO", sock_id)
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
                 if not telemetry:
                     data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": False})

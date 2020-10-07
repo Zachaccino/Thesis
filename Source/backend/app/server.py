@@ -85,6 +85,7 @@ def panels():
 def panel_detail():
     device_id = request.json['device_id']
     aggregation = request.json['aggregation']
+    print(aggregation)
     if not db.device_exist(device_id):
         return response("Device doest not exists.")
 
@@ -110,6 +111,7 @@ def add_telemetry():
     current_out = float(request.json['current_out'])
     voltage_out = float(request.json['voltage_out'])
     q.enqueue(add_telemetry_worker, args=(device_id, current_in, voltage_in, current_out, voltage_out))
+    print(device_id)
     events = db.serialise_events(device_id)
     return events
 

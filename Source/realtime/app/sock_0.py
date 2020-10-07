@@ -7,40 +7,60 @@ import json
 
 sock_id = 0
 socket_name = "SOCKET"+str(sock_id)
-conntrack = {'AZDpXvKC':1}
+conntrack = {}
+sidtrack = {}
 
 mq = pulsar.Client(PULSAR_ADDRESS)
 receiver = mq.subscribe(socket_name, subscription_name=socket_name)
 sender = mq.create_producer('HUB0')
 
-sio = socketio.AsyncServer()
+sio = socketio.AsyncServer(engineio_logger=True, cors_allowed_origins="*")
 wa = web.Application()
 sio.attach(wa)
 
-@sio.event
-def connect(sid, env):
-    sio.enter_room(sid, env["HTTP_CLIENT_TYPE"])
-    if env["HTTP_CLIENT_TYPE"] == "HUB":
-        sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
-    print("Connected: ", env["HTTP_CLIENT_TYPE"])
 
 @sio.event
-def force_update(sid):
+def connect(sid, env):
+    print(conntrack)
+    print('connected.')
+    
+@sio.event
+async def frontend_connect(sid, data):
+    print(conntrack)
+    room = data["content"]
+    if room not in conntrack:
+        conntrack[room] = 1
+    else:
+        conntrack[room] += 1
+    sio.enter_room(sid, room)
+    print("ENTER ROOM", room)
+    sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
+    sidtrack[sid] = room
+
+
+@sio.event
+async def force_update(sid):
     print('Force update')
 
 @sio.event
-def aggregate_update_available(sid, data):
-    print('Update available received with ', data)
-    print('Emit to room.') 
+async def aggregate_update_available(sid, data):
+    print("aggregate Update", data["content_id"])
+    await sio.emit("aggregate_update", data=data["data"], room=data["content_id"])
 
 @sio.event
-def realtime_update_available(sid, data):
-    print('Update available received with ', data)
-    print('Emit to room.') 
+async def realtime_update_available(sid, data):
+    print("realtime Update", data["content_id"])
+    print("REALTIME TO ROOM", data["content_id"])
+    await sio.emit("realtime_update", data=data["data"], room=data["content_id"])
 
 @sio.event
 def disconnect(sid):
+    print(conntrack)
     print('disconnected from server')
+    if sid in sidtrack:
+        del conntrack[sidtrack[sid]]
+        del sidtrack[sid]
+        sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
 
 web.run_app(wa, host=SERVER_ADDRESS, port=SERVER_PORT+sock_id)
 mq.close()

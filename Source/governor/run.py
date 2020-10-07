@@ -4,6 +4,9 @@ import time
 import os
 from pyowm import OWM
 from pprint import pprint
+import pulsar
+from settings import PULSAR_ADDRESS
+import json
 
 
 # Setting Switch
@@ -50,6 +53,9 @@ def aggregate_telemetry():
         'mongodb://' + server_address + ':27017/', username="hyperlynk", password="OnePurpleParrot")
     db = client['hyperlynkdb']
 
+    mq = pulsar.Client(PULSAR_ADDRESS)
+    producer = mq.create_producer('HUB0')
+
     while(True):
         # Aggregation Loop
         for dev in db.devices.find({}, {"device_id": 1, "telemetries": 1}):
@@ -84,6 +90,9 @@ def aggregate_telemetry():
                     }
                 }
             )
+
+            msg = json.dumps({"TYPE": "TELE_UPDATE_AGGREGATE", "CONTENT_ID": dev["device_id"]})
+            producer.send(msg.encode('utf-8'))
 
         time.sleep(period)
 

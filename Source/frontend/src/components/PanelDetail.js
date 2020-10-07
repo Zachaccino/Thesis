@@ -13,6 +13,9 @@ import { useParams } from "react-router";
 import RemoteServer from './RemoteServer';
 import axios from 'axios';
 import StatusCard from "./StatusCard";
+import openSocket from 'socket.io-client';
+import RemoteSocket from "./RemoteSocket"
+import Panels from './Panels';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -160,6 +163,9 @@ function PanelDetail(props) {
   const [efficiency, setEfficiency] = useState();
   const [refreshPeriod, setRefreshPeriod] = useState(1000*10);
 
+  const socket = openSocket(RemoteSocket());
+  
+
   function AggregationSwitch(name, action) {
     const classes = useStyles();
     let { panel } = useParams();
@@ -167,10 +173,8 @@ function PanelDetail(props) {
     const toggleAggregationMode = () => {
       if (aggregation) {
         setAggregation(false)
-        setRefreshPeriod(1000)
       } else {
         setAggregation(true)
-        setRefreshPeriod(1000*10)
       }
     }
   
@@ -214,9 +218,34 @@ function PanelDetail(props) {
       </Paper>
     )
   }
-
+  
   useEffect(() => {
+    socket.emit('frontend_connect', {'content': panel})
+    if (aggregation) {
+      socket.off('realtime_update')
+      socket.on('aggregate_update', (data) => {
+        setRegion(data["Payload"]["region"])
+        setStatus(data["Payload"]["status"])
+        setCurrent(data["Payload"]["current_graph"])
+        setVoltage(data["Payload"]["voltage_graph"])
+        setPwr(data["Payload"]["pwr_graph"])
+        setEfficiency(data["Payload"]["efficiency_graph"])
+      });
+    } else {
+      socket.off('aggregate_update')
+      socket.on('realtime_update', (data) => {
+        setRegion(data["Payload"]["region"])
+        setStatus(data["Payload"]["status"])
+        setCurrent(data["Payload"]["current_graph"])
+        setVoltage(data["Payload"]["voltage_graph"])
+        setPwr(data["Payload"]["pwr_graph"])
+        setEfficiency(data["Payload"]["efficiency_graph"])
+      });
+    }
+    socket.on('reconnect', (err) => {socket.emit('frontend_connect', {'content': panel})})
+
     const fetchData = () => {
+      console.log("Fetching")
       axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": aggregation})
         .then(res => {
           setRegion(res.data["Payload"]["region"])
@@ -229,13 +258,7 @@ function PanelDetail(props) {
     };
 
     fetchData();
-
-    const interval = setInterval(() => {
-      fetchData();
-    }, refreshPeriod);
-
-    return () => clearInterval(interval);
-  }, [aggregation, refreshPeriod]);
+  }, [aggregation]);
 
 
   return (
