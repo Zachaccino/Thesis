@@ -45,12 +45,14 @@ async def force_update(sid):
 @sio.event
 async def aggregate_update_available(sid, data):
     print("aggregate Update", data["content_id"])
+    print(conntrack)
     await sio.emit("aggregate_update", data=data["data"], room=data["content_id"])
 
 @sio.event
 async def realtime_update_available(sid, data):
     print("realtime Update", data["content_id"])
     print("REALTIME TO ROOM", data["content_id"])
+    print(conntrack)
     await sio.emit("realtime_update", data=data["data"], room=data["content_id"])
 
 @sio.event

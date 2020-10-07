@@ -162,10 +162,11 @@ function PanelDetail(props) {
   const [pwr, setPwr] = useState();
   const [efficiency, setEfficiency] = useState();
   const [refreshPeriod, setRefreshPeriod] = useState(1000*10);
-  const [onBoot, setOnBoot] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const socket = openSocket(RemoteSocket());
-  
+  const [realData, setRealData] = useState({});
+  const [aggrData, setAggrData] = useState({});
 
   function AggregationSwitch(name, action) {
     const classes = useStyles();
@@ -221,50 +222,50 @@ function PanelDetail(props) {
   }
   
   useEffect(() => {
-    if (onBoot) {
-      socket.emit('frontend_connect', {'content': panel})
-      setOnBoot(false);
-    }
-   
-    if (aggregation) {
-      socket.off('realtime_update')
-      socket.on('aggregate_update', (data) => {
-        setRegion(data["Payload"]["region"])
-        setStatus(data["Payload"]["status"])
-        setCurrent(data["Payload"]["current_graph"])
-        setVoltage(data["Payload"]["voltage_graph"])
-        setPwr(data["Payload"]["pwr_graph"])
-        setEfficiency(data["Payload"]["efficiency_graph"])
+    axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": true})
+      .then(res => {
+        setAggrData(res.data)
       });
-    } else {
-      socket.off('aggregate_update')
-      socket.on('realtime_update', (data) => {
-        setRegion(data["Payload"]["region"])
-        setStatus(data["Payload"]["status"])
-        setCurrent(data["Payload"]["current_graph"])
-        setVoltage(data["Payload"]["voltage_graph"])
-        setPwr(data["Payload"]["pwr_graph"])
-        setEfficiency(data["Payload"]["efficiency_graph"])
+    axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": false})
+      .then(res => {
+        setRealData(res.data)
       });
-    }
-    
-    socket.on('reconnect', (err) => {console.log("RECONNECT"); socket.emit('frontend_connect', {'content': panel})})
-
-    const fetchData = () => {
-      console.log("Fetching")
-      axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": aggregation})
-        .then(res => {
-          setRegion(res.data["Payload"]["region"])
-          setStatus(res.data["Payload"]["status"])
-          setCurrent(res.data["Payload"]["current_graph"])
-          setVoltage(res.data["Payload"]["voltage_graph"])
-          setPwr(res.data["Payload"]["pwr_graph"])
-          setEfficiency(res.data["Payload"]["efficiency_graph"])
-        });
-    };
-
-    fetchData();
+    setLoading(false);
   }, [aggregation]);
+
+  useEffect(() => {
+    socket.emit('frontend_connect', {'content': panel})
+    socket.on('aggregate_update', (data) => {
+      setAggrData(data);
+    });
+    socket.on('realtime_update', (data) => {
+      setRealData(data);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!aggregation && !loading) {
+      setRegion(realData["Payload"]["region"])
+      setStatus(realData["Payload"]["status"])
+      setCurrent(realData["Payload"]["current_graph"])
+      setVoltage(realData["Payload"]["voltage_graph"])
+      setPwr(realData["Payload"]["pwr_graph"])
+      setEfficiency(realData["Payload"]["efficiency_graph"])
+    }
+  }, [realData, aggregation]);
+
+  useEffect(() => {
+    if (aggregation && !loading) {
+      setRegion(aggrData["Payload"]["region"])
+      setStatus(aggrData["Payload"]["status"])
+      setCurrent(aggrData["Payload"]["current_graph"])
+      setVoltage(aggrData["Payload"]["voltage_graph"])
+      setPwr(aggrData["Payload"]["pwr_graph"])
+      setEfficiency(aggrData["Payload"]["efficiency_graph"])
+    }
+  }, [aggrData, aggregation]);
+
+
 
 
   return (
