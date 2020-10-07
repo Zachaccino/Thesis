@@ -1,4 +1,5 @@
 from settings import DB_ADDRESS, DB_USERNAME, DB_PASSWORD, REDIS_ADDRESS, REDIS_PORT
+from conncount import ConnCount
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import random
@@ -22,6 +23,11 @@ db.init()
 
 # Setting up Redis Async Job Queue.
 q = Queue(connection=Redis(REDIS_ADDRESS, REDIS_PORT))
+
+# Settingup ConnCount.
+cc = ConnCount(REDIS_ADDRESS, REDIS_PORT)
+cc.connect()
+cc.reset()
 
 # Generate a random device id.
 def generate_device_id(length=16):
@@ -159,6 +165,35 @@ def register_region():
         return response('Region successfully added.')
 
     return response('Region name already exists.')
+
+
+@ app.route('/sync_conncount', methods=['POST'])
+def sync_conncount():
+    # Sock_ID should be an integer.
+    sock_id = int(request.json['sock_id'])
+    # Count is also an integer.
+    count = int(request.json['count'])
+
+    # However, json key must be string, so we must convert it from int to str.
+    cc.put(str(sock_id), count)
+    return "OK"
+
+
+@ app.route('/request_port', methods=['GET'])
+def request_port():
+    best_sock = None
+    conncount = cc.get_all()
+    for sock_id in conncount:
+        if not best_sock:
+            best_sock = sock_id
+        elif conncount[sock_id]["value"] < conncount[best_sock]["value"]:
+            best_sock = sock_id
+    
+    if not best_sock:
+        return {"sock_id": -1}
+
+    cc.put(str(best_sock), conncount[sock_id]["value"]+1)
+    return {"sock_id": int(best_sock)}
 
 
 if __name__ == '__main__':
