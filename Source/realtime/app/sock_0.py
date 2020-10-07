@@ -58,9 +58,10 @@ def disconnect(sid):
     print(conntrack)
     print('disconnected from server')
     if sid in sidtrack:
-        del conntrack[sidtrack[sid]]
-        del sidtrack[sid]
+        conntrack[sidtrack[sid]] -= 1
+        del sidtrack[sid] 
         sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
+    print(conntrack)
 
 web.run_app(wa, host=SERVER_ADDRESS, port=SERVER_PORT+sock_id)
 mq.close()

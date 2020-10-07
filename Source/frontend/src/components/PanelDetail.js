@@ -162,6 +162,7 @@ function PanelDetail(props) {
   const [pwr, setPwr] = useState();
   const [efficiency, setEfficiency] = useState();
   const [refreshPeriod, setRefreshPeriod] = useState(1000*10);
+  const [onBoot, setOnBoot] = useState(true);
 
   const socket = openSocket(RemoteSocket());
   
@@ -220,7 +221,11 @@ function PanelDetail(props) {
   }
   
   useEffect(() => {
-    socket.emit('frontend_connect', {'content': panel})
+    if (onBoot) {
+      socket.emit('frontend_connect', {'content': panel})
+      setOnBoot(false);
+    }
+   
     if (aggregation) {
       socket.off('realtime_update')
       socket.on('aggregate_update', (data) => {
@@ -242,7 +247,8 @@ function PanelDetail(props) {
         setEfficiency(data["Payload"]["efficiency_graph"])
       });
     }
-    socket.on('reconnect', (err) => {socket.emit('frontend_connect', {'content': panel})})
+    
+    socket.on('reconnect', (err) => {console.log("RECONNECT"); socket.emit('frontend_connect', {'content': panel})})
 
     const fetchData = () => {
       console.log("Fetching")
