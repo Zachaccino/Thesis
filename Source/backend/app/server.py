@@ -16,6 +16,7 @@ import pulsar
 app = Flask(__name__)
 CORS(app)
 
+
 # Setting up Mongo DB.
 db = Database(DB_ADDRESS, DB_USERNAME, DB_PASSWORD)
 db.connect()
@@ -24,7 +25,7 @@ db.init()
 # Setting up Redis Async Job Queue.
 q = Queue(connection=Redis(REDIS_ADDRESS, REDIS_PORT))
 
-# Settingup ConnCount.
+# Setting up ConnCount.
 cc = ConnCount(REDIS_ADDRESS, REDIS_PORT)
 cc.connect()
 cc.reset()

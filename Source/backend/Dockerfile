@@ -2,10 +2,16 @@ FROM python:3
 
 WORKDIR /usr/src/app
 
-COPY ./app/server.py .
-COPY ./app/wsgi.py .
+COPY ./app/conncount.py .
 COPY ./app/database.py .
+COPY ./app/executor.py .
+COPY ./app/server.py .
+COPY ./app/settings.py .
+COPY ./app/worker.py .
+COPY ./app/wsgi.py .
+
 COPY ./app/run.sh .
+
 COPY ./requirements.txt .
 
 EXPOSE 8000

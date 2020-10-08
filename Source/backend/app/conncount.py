@@ -19,7 +19,7 @@ class ConnCount():
     # Get the value associated with the key.
     def get(self, sock_id):
         if not self.db:
-            raise ConnectionError("RedisDict is not connected. Try `RedisDict.connect()`")
+            raise ConnectionError("RedisDict is not connected. Try `ConnCount.connect()`")
         value = None
         timestamp = None
         sock_id = str(sock_id)
@@ -40,7 +40,7 @@ class ConnCount():
     
     def get_all(self):
         if not self.db:
-            raise ConnectionError("RedisDict is not connected. Try `RedisDict.connect()`")
+            raise ConnectionError("RedisDict is not connected. Try `ConnCount.connect()`")
         data = {}
         with self.db.pipeline() as p:
             while True:
