@@ -4,8 +4,8 @@ WORKDIR /usr/src/app
 
 COPY ./app/hub.py .
 COPY ./app/settings.py .
-COPY ./app/sock0.py .
-COPY ./app/sock1.py .
+COPY ./app/sock_0.py .
+COPY ./app/sock_1.py .
 
 COPY ./app/run.sh .
 
