@@ -4,12 +4,15 @@ echo "[2] Backend"
 echo "[3] Frontend"
 echo "[4] Bot"
 echo "[5] Governor"
-echo "[6] All"
-echo "[7] Remove All"
+echo "[6] Pulsar"
+echo "[7] Redis"
+echo "[8] Socket"
+echo "[9] All"
+echo "[10] Remove All"
 read INDEX
 
-#docker run --name=redis --publish=6379:6379 --hostname=redis --restart=on-failure --detach redis:latest
-#docker run -it -p 6650:6650 -p 8080:8080 --detach apachepulsar/pulsar:2.6.1 bin/pulsar standalone
+
+
 
 if [ $INDEX = "1" ] || [ $INDEX = "6" ]; then
     docker run -d -p 27017:27017 --name mongodb -e MONGO_INITDB_ROOT_USERNAME="hyperlynk" -e MONGO_INITDB_ROOT_PASSWORD="OnePurpleParrot" mongo
@@ -33,6 +36,15 @@ elif [ $INDEX = "5" ] || [ $INDEX = "6" ]; then
     cd ./governor
     docker build --tag governor:1.0 .
     docker run --detach --name governor governor:1.0
+
+elif [ $INDEX = "6" ] || [ $INDEX = "6" ]; then
+    docker run -it -p 6650:6650 -p 8080:8080 --detach apachepulsar/pulsar:2.6.1 bin/pulsar standalone
+
+elif [ $INDEX = "7" ] || [ $INDEX = "6" ]; then
+    docker run --name=redis --publish=6379:6379 --hostname=redis --restart=on-failure --detach redis:latest
+
+elif [ $INDEX = "8" ] || [ $INDEX = "6" ]; then
+
 
 elif [ $INDEX = "7" ]; then
     docker rm --force mongodb

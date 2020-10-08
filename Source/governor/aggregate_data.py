@@ -8,7 +8,7 @@ import json
 
 
 # Setting Switch
-deploy = True
+deploy = False
 development_address = "127.0.0.1"
 deployment_address = "3.24.141.26"
 server_address = deployment_address if deploy else development_address
@@ -17,7 +17,7 @@ server_address = deployment_address if deploy else development_address
 # Aggregate telemetries every minute.
 def aggregate_telemetry():
     # Period in Seconds
-    period = 60
+    period = 10
 
     # Database Conn
     client = pymongo.MongoClient(
@@ -28,6 +28,7 @@ def aggregate_telemetry():
     producer = mq.create_producer('HUB0')
 
     while(True):
+        print("Aggregating")
         # Aggregation Loop
         for dev in db.devices.find({}, {"device_id": 1, "telemetries": 1}):
             total_current_in = 0
@@ -62,8 +63,10 @@ def aggregate_telemetry():
                 }
             )
 
-            msg = json.dumps({"TYPE": "TELE_UPDATE_AGGREGATE", "CONTENT_ID": dev["device_id"]})
-            producer.send(msg.encode('utf-8'))
+            aggr_msg = json.dumps({"TYPE": "TELE_UPDATE_AGGREGATE", "CONTENT_ID": dev["device_id"]})
+            real_msg = json.dumps({"TYPE": "TELE_UPDATE_REALTIME", "CONTENT_ID": dev["device_id"]})
+            producer.send(aggr_msg.encode('utf-8'))
+            producer.send(real_msg.encode('utf-8'))
 
         time.sleep(period)
 

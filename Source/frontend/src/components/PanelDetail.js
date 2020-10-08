@@ -202,6 +202,7 @@ function PanelDetail(props) {
   useEffect(() => {
     socket.emit('frontend_connect', {'content': panel})
     socket.on('aggregate_update', (data) => {
+      console.log("Aggregate")
       setRegion(data["Payload"]["region"])
       setStatus(data["Payload"]["status"])
       setAggregateCurrent(data["Payload"]["current_graph"])
@@ -218,6 +219,14 @@ function PanelDetail(props) {
       setRealtimeEfficiency(data["Payload"]["efficiency_graph"])
     });
   }, []);
+
+  useEffect(()=>{
+    const interval = setInterval(() => {
+      socket.emit("keep_alive");
+    }, 1000*60);
+
+    return () => clearInterval(interval);
+  }, [])
 
 
   return (

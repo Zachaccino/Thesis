@@ -14,7 +14,7 @@ mq = pulsar.Client(PULSAR_ADDRESS)
 receiver = mq.subscribe(socket_name, subscription_name=socket_name)
 sender = mq.create_producer('HUB0')
 
-sio = socketio.AsyncServer(engineio_logger=True, cors_allowed_origins="*")
+sio = socketio.AsyncServer(engineio_logger=False, cors_allowed_origins="*")
 wa = web.Application()
 sio.attach(wa)
 
@@ -37,6 +37,9 @@ async def frontend_connect(sid, data):
     sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
     sidtrack[sid] = room
 
+@sio.event
+async def keep_alive(sid):
+    print("keep alive>>>>>>>>>>>>>>>>>>>")
 
 @sio.event
 async def force_update(sid):
@@ -45,14 +48,11 @@ async def force_update(sid):
 @sio.event
 async def aggregate_update_available(sid, data):
     print("aggregate Update", data["content_id"])
-    print(conntrack)
     await sio.emit("aggregate_update", data=data["data"], room=data["content_id"])
 
 @sio.event
 async def realtime_update_available(sid, data):
     print("realtime Update", data["content_id"])
-    print("REALTIME TO ROOM", data["content_id"])
-    print(conntrack)
     await sio.emit("realtime_update", data=data["data"], room=data["content_id"])
 
 @sio.event

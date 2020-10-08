@@ -46,6 +46,7 @@ def aggregate_update_available(content_id):
                 if not telemetry:
                     data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": True})
                     telemetry = {"content_id": content_id, "data": json.loads(data.content)}
+                print("emitting?")
                 sockets[sock_id].emit("aggregate_update_available", telemetry)
 
 

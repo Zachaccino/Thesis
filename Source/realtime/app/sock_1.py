@@ -45,12 +45,14 @@ async def force_update(sid):
 @sio.event
 async def aggregate_update_available(sid, data):
     print("aggregate Update", data["content_id"])
+    print(conntrack)
     await sio.emit("aggregate_update", data=data["data"], room=data["content_id"])
 
 @sio.event
 async def realtime_update_available(sid, data):
     print("realtime Update", data["content_id"])
     print("REALTIME TO ROOM", data["content_id"])
+    print(conntrack)
     await sio.emit("realtime_update", data=data["data"], room=data["content_id"])
 
 @sio.event
@@ -58,9 +60,10 @@ def disconnect(sid):
     print(conntrack)
     print('disconnected from server')
     if sid in sidtrack:
-        del conntrack[sidtrack[sid]]
-        del sidtrack[sid]
+        conntrack[sidtrack[sid]] -= 1
+        del sidtrack[sid] 
         sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
+    print(conntrack)
 
 web.run_app(wa, host=SERVER_ADDRESS, port=SERVER_PORT+sock_id)
 mq.close()
