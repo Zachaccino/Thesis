@@ -3,15 +3,8 @@ import datetime
 import time
 import os
 import pulsar
-from settings import PULSAR_ADDRESS
+from settings import PULSAR_ADDRESS, DB_ADDRESS, DB_USERNAME, DB_PASSWORD
 import json
-
-
-# Setting Switch
-deploy = False
-development_address = "127.0.0.1"
-deployment_address = "3.24.141.26"
-server_address = deployment_address if deploy else development_address
 
 
 # Aggregate telemetries every minute.
@@ -20,15 +13,12 @@ def aggregate_telemetry():
     period = 10
 
     # Database Conn
-    client = pymongo.MongoClient(
-        'mongodb://' + server_address + ':27017/', username="hyperlynk", password="OnePurpleParrot")
+    client = pymongo.MongoClient(DB_ADDRESS, username=DB_USERNAME, password=DB_PASSWORD)
     db = client['hyperlynkdb']
-
     mq = pulsar.Client(PULSAR_ADDRESS)
     producer = mq.create_producer('HUB0')
 
     while(True):
-        print("Aggregating")
         # Aggregation Loop
         for dev in db.devices.find({}, {"device_id": 1, "telemetries": 1}):
             total_current_in = 0
