@@ -12,8 +12,6 @@ echo "[10] Remove All"
 read INDEX
 
 
-
-
 if [ $INDEX = "1" ] || [ $INDEX = "6" ]; then
     docker run -d -p 27017:27017 --name mongodb -e MONGO_INITDB_ROOT_USERNAME="hyperlynk" -e MONGO_INITDB_ROOT_PASSWORD="OnePurpleParrot" mongo
 
@@ -44,7 +42,9 @@ elif [ $INDEX = "7" ] || [ $INDEX = "6" ]; then
     docker run --name=redis --publish=6379:6379 --hostname=redis --restart=on-failure --detach redis:latest
 
 elif [ $INDEX = "8" ] || [ $INDEX = "6" ]; then
-
+    cd ./realtime
+    docker build --tag realtime:2.0 .
+    docker run -p 5000:5000 -p 5001:5001 --detach --name realtime realtime:2.0 
 
 elif [ $INDEX = "7" ]; then
     docker rm --force mongodb
@@ -52,6 +52,9 @@ elif [ $INDEX = "7" ]; then
     docker rm --force frontend
     docker rm --force bot
     docker rm --force governor
+    docker rm --force pulsar
+    docker rm --force redis
+    docker rm --force realtime
 
 else
     echo "Index is not valid."

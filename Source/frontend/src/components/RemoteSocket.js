@@ -1,5 +1,5 @@
 function RemoteSocket() {
-    const deploy = false;
+    const deploy = true;
     if (deploy) {
         return "http://3.24.141.26:5000";
     } else {

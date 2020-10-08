@@ -1,5 +1,5 @@
 function RemoteServer() {
-  const deploy = false;
+  const deploy = true;
   if (deploy) {
     return "http://3.24.141.26:8000";
   } else {
