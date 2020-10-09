@@ -14,7 +14,7 @@ mq = pulsar.Client(PULSAR_ADDRESS)
 receiver = mq.subscribe(socket_name, subscription_name=socket_name)
 sender = mq.create_producer('HUB0')
 
-sio = socketio.AsyncServer(engineio_logger=True, cors_allowed_origins="*")
+sio = socketio.AsyncServer(engineio_logger=False, cors_allowed_origins="*")
 wa = web.Application()
 sio.attach(wa)
 
