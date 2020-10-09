@@ -47,13 +47,12 @@ async def force_update(sid):
 
 @sio.event
 def aggregate_update_available(sid, data):
-    print("Problem happens before here.")
-    print("aggregate Update", data["content_id"])
+    print("SOCK0 Aggregate Update Received", data["content_id"])
     sio.emit("aggregate_update", data=data["data"], room=data["content_id"])
 
 @sio.event
 def realtime_update_available(sid, data):
-    print("realtime Update", data["content_id"])
+    print("SOCK0 Realtime Update Received", data["content_id"])
     sio.emit("realtime_update", data=data["data"], room=data["content_id"])
 
 @sio.event

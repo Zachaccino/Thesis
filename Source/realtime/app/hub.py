@@ -28,7 +28,7 @@ for i in range(NUMBER_OF_SOCKETS):
 # Synchronise connection tracker state
 def conntrack_sync(sock_id, state):
     conntrack[sock_id] = state
-    print(conntrack)
+    print("CONNTRACK sync.", conntrack)
 
 
 # Received an aggregated update.
@@ -45,6 +45,7 @@ def aggregate_update_available(content_id, current_in, voltage_in, current_out, 
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
                 if not telemetry:
                     telemetry = {"content_id": content_id, "data": {"CURRENT_IN": current_in, "VOLTAGE_IN": voltage_in, "CURRENT_OUT": current_out, "VOLTAGE_OUT": voltage_out, "TIME": timestamp}}
+                print("HUB is sending aggregate update.", telemetry)
                 sockets[sock_id].emit("aggregate_update_available", telemetry)
 
 
@@ -62,6 +63,7 @@ def realtime_update_available(content_id, current_in, voltage_in, current_out, v
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
                 if not telemetry:
                     telemetry = {"content_id": content_id, "data": {"CURRENT_IN": current_in, "VOLTAGE_IN": voltage_in, "CURRENT_OUT": current_out, "VOLTAGE_OUT": voltage_out, "TIME": timestamp}}
+                print("HUB is sending realtime update.", telemetry)
                 sockets[sock_id].emit("realtime_update_available", telemetry)
 
 
