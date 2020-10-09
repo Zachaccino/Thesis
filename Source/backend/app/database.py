@@ -140,9 +140,9 @@ class Database:
 
 
     def device_detail_graphs(self, device_id, aggregation=False, n_latest_records=1):
-        postfix = " minutes from now"
+        postfix = "min"
         if not aggregation:
-            postfix = "th Sample (DEBUG MODE)"
+            postfix = "th"
             n_latest_records = 60
             
 
