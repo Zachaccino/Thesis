@@ -33,6 +33,7 @@ def conntrack_sync(sock_id, state):
 
 # Received an aggregated update.
 def aggregate_update_available(content_id, current_in, voltage_in, current_out, voltage_out, timestamp):
+    print("HUB Aggregate Update Detected")
     if content_id == "overview":
         pass
     elif content_id == "regions":
@@ -51,6 +52,7 @@ def aggregate_update_available(content_id, current_in, voltage_in, current_out, 
 
 # Received a realtime update.
 def realtime_update_available(content_id, current_in, voltage_in, current_out, voltage_out, timestamp):
+    print("HUB Realtime Update Detected")
     if content_id == "overview":
         pass
     elif content_id == "regions":
