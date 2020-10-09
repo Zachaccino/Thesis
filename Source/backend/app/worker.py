@@ -5,6 +5,7 @@ from settings import DB_ADDRESS, DB_USERNAME, DB_PASSWORD, PULSAR_ADDRESS
 from database import Database
 import pulsar
 import json
+import time
 
 def push_event_worker(device_id, event_code, event_value):
     db = Database(DB_ADDRESS, DB_USERNAME, DB_PASSWORD)
@@ -21,5 +22,5 @@ def add_telemetry_worker(device_id, current_in, voltage_in, current_out, voltage
     mq = pulsar.Client(PULSAR_ADDRESS)
     producer = mq.create_producer('HUB0')
     db.insert_telemetry(device_id, current_in, voltage_in, current_out, voltage_out)
-    msg = json.dumps({"TYPE": "TELE_UPDATE_REALTIME", "CONTENT_ID": device_id})
+    msg = json.dumps({"TYPE": "TELE_UPDATE_REALTIME", "CONTENT_ID": device_id, "CURRENT_IN": current_in, "VOLTAGE_IN": voltage_in, "CURRENT_OUT": current_out, "VOLTAGE_OUT": voltage_out, "TIME": time.time()})
     producer.send(msg.encode('utf-8'))

@@ -33,6 +33,11 @@ def aggregate_telemetry():
                 total_current_out += t["current_out"]
                 total_voltage_out += t["voltage_out"]
                 count += 1
+            
+            c_in = 0 if count == 0 else total_current_in / count
+            v_in = 0 if count == 0 else total_voltage_in / count
+            c_out = 0 if count == 0 else total_current_out / count
+            v_out = 0 if count == 0 else total_voltage_out / count
 
             db.devices.update_one(
                 {
@@ -41,10 +46,10 @@ def aggregate_telemetry():
                 {
                     "$push": {
                         "aggregate_telemetries": {
-                            "current_in": 0 if count == 0 else total_current_in / count,
-                            "voltage_in": 0 if count == 0 else total_voltage_in / count,
-                            "current_out": 0 if count == 0 else total_current_out / count,
-                            "voltage_out": 0 if count == 0 else total_voltage_out / count
+                            "current_in": c_in,
+                            "voltage_in": v_in,
+                            "current_out": c_out,
+                            "voltage_out": v_out
                         }
                     },
                     "$set": {
@@ -53,10 +58,8 @@ def aggregate_telemetry():
                 }
             )
 
-            aggr_msg = json.dumps({"TYPE": "TELE_UPDATE_AGGREGATE", "CONTENT_ID": dev["device_id"]})
-            real_msg = json.dumps({"TYPE": "TELE_UPDATE_REALTIME", "CONTENT_ID": dev["device_id"]})
+            aggr_msg = json.dumps({"TYPE": "TELE_UPDATE_AGGREGATE", "CONTENT_ID": dev["device_id"], "CURRENT_IN": c_in, "VOLTAGE_IN": v_in, "CURRENT_OUT": c_out, "VOLTAGE_OUT": v_out, "TIME": time.time()})
             producer.send(aggr_msg.encode('utf-8'))
-            producer.send(real_msg.encode('utf-8'))
 
         time.sleep(period)
 

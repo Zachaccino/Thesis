@@ -39,7 +39,7 @@ async def frontend_connect(sid, data):
 
 @sio.event
 async def keep_alive(sid):
-    print("keep alive>>>>>>>>>>>>>>>>>>>")
+    print("keep alive")
 
 @sio.event
 async def force_update(sid):

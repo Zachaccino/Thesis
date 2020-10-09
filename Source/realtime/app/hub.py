@@ -32,7 +32,7 @@ def conntrack_sync(sock_id, state):
 
 
 # Received an aggregated update.
-def aggregate_update_available(content_id):
+def aggregate_update_available(content_id, current_in, voltage_in, current_out, voltage_out, timestamp):
     if content_id == "overview":
         pass
     elif content_id == "regions":
@@ -44,19 +44,12 @@ def aggregate_update_available(content_id):
         for sock_id in conntrack:
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
                 if not telemetry:
-                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<0")
-                    data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": True}).json()
-                    print(data)
-                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<1")
-                    telemetry = {"content_id": content_id, "data": {"Payload": "AGGR"}}
-                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<2")
-                print("emitting?")
+                    telemetry = {"content_id": content_id, "data": {"CURRENT_IN": current_in, "VOLTAGE_IN": voltage_in, "CURRENT_OUT": current_out, "VOLTAGE_OUT": voltage_out, "TIME": timestamp}}
                 sockets[sock_id].emit("aggregate_update_available", telemetry)
-                print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<3")
 
 
 # Received a realtime update.
-def realtime_update_available(content_id):
+def realtime_update_available(content_id, current_in, voltage_in, current_out, voltage_out, timestamp):
     if content_id == "overview":
         pass
     elif content_id == "regions":
@@ -68,14 +61,8 @@ def realtime_update_available(content_id):
         for sock_id in conntrack:
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
                 if not telemetry:
-                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<4")
-                    data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": False}).json()
-                    print(data)
-                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<5")
-                    telemetry = {"content_id": content_id, "data": {"Payload": "REAL"}}
-                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<6")
+                    telemetry = {"content_id": content_id, "data": {"CURRENT_IN": current_in, "VOLTAGE_IN": voltage_in, "CURRENT_OUT": current_out, "VOLTAGE_OUT": voltage_out, "TIME": timestamp}}
                 sockets[sock_id].emit("realtime_update_available", telemetry)
-                print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<7")
 
 
 # Listening for Messages
@@ -87,9 +74,9 @@ while True:
     print(data)
     
     if data["TYPE"] == "TELE_UPDATE_AGGREGATE":
-        aggregate_update_available(data["CONTENT_ID"])
+        aggregate_update_available(data["CONTENT_ID"], data["CURRENT_IN"], data["VOLTAGE_IN"], data["CURRENT_OUT"], data["VOLTAGE_OUT"], data["TIME"])
     elif data["TYPE"] == "TELE_UPDATE_REALTIME":
-        realtime_update_available(data["CONTENT_ID"])
+        realtime_update_available(data["CONTENT_ID"], data["CURRENT_IN"], data["VOLTAGE_IN"], data["CURRENT_OUT"], data["VOLTAGE_OUT"], data["TIME"])
     elif data["TYPE"] == "CONNTRACK_UPDATE":
         conntrack_sync(data["SOCK_ID"], data["STATE"])
 

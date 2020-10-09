@@ -127,7 +127,7 @@ class Database:
     def basic_graph(self, label, size, prefix="", postfix=""):
         graph = [{"id": label, "data": []}]
         for i in range(size):
-            graph[0]["data"].append({"x": prefix + str(i) + postfix, "y": 0})
+            graph[0]["data"].append({"x": prefix + str(size - i) + postfix, "y": 0})
         return graph
     
     def stack_graph(self, graph1, graph2):
@@ -140,9 +140,9 @@ class Database:
 
 
     def device_detail_graphs(self, device_id, aggregation=False, n_latest_records=1):
-        postfix = "min"
+        postfix = " min ago"
         if not aggregation:
-            postfix = "th"
+            postfix = " sample"
             n_latest_records = 60
             
 
@@ -154,10 +154,7 @@ class Database:
 
         dev = self.find_device(device_id, aggregation, n_latest_records)
         tag = "aggregate_telemetries" if aggregation else "telemetries"
-        index = n_latest_records-1
-
-        if len(dev[tag]) < n_latest_records:
-            index = len(dev[tag])-1
+        index = n_latest_records - len(dev[tag])
         
         for t in dev[tag]:
             self.set_point(current, index, round(t["current_in"], 2), 0)
@@ -167,7 +164,7 @@ class Database:
             self.set_point(pwr, index, round(t["current_in"] * t["voltage_in"], 2), 0)
             self.set_point(pwr, index, round(t["current_out"] * t["voltage_out"], 2), 1)
             self.set_point(efficiency, index, round((t["current_out"] * t["voltage_out"]) / (t["current_in"] * t["voltage_in"]+0.00001) * 100, 2))
-            index -= 1
+            index += 1
 
         return {
             "device_id": dev["device_id"],
