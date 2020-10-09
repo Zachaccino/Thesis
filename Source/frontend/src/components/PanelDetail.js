@@ -168,17 +168,6 @@ function PanelDetail(props) {
   const [aggregateEfficiency, setAggregateEfficiency] = useState([{"id": "Input", "data": []}, {"id": "Output", "data": []}]);
 
   const socket = openSocket(RemoteSocket());
-
-  let realtimeCurrentBuffer = [{"id": "Input", "data": []}, {"id": "Output", "data": []}]
-  let realtimeVoltageBuffer = [{"id": "Input", "data": []}, {"id": "Output", "data": []}]
-  let realtimePwrBuffer = [{"id": "Input", "data": []}, {"id": "Output", "data": []}]
-  let realtimeEfficiencyBuffer = [{"id": "Input", "data": []}, {"id": "Output", "data": []}]
-
-  let aggregateCurrentBuffer = [{"id": "Input", "data": []}, {"id": "Output", "data": []}]
-  let aggregateVoltageBuffer = [{"id": "Input", "data": []}, {"id": "Output", "data": []}]
-  let aggregatePwrBuffer = [{"id": "Input", "data": []}, {"id": "Output", "data": []}]
-  let aggregateEfficiencyBuffer = [{"id": "Input", "data": []}, {"id": "Output", "data": []}]
-
   
   useEffect(() => {
     const fetchRealtimeData = () => {
@@ -186,18 +175,10 @@ function PanelDetail(props) {
         .then(res => {
           setRegion(res.data["Payload"]["region"])
           setStatus(res.data["Payload"]["status"])
-
-          realtimeCurrentBuffer = res.data["Payload"]["current_graph"]
-          setRealtimeCurrent(realtimeCurrentBuffer)
-          
-          realtimeVoltageBuffer = res.data["Payload"]["voltage_graph"]
-          setRealtimeVoltage(realtimeVoltageBuffer)
-
-          realtimePwrBuffer = res.data["Payload"]["pwr_graph"]
-          setRealtimePwr(realtimePwrBuffer)
-
-          realtimeEfficiencyBuffer = res.data["Payload"]["efficiency_graph"]
-          setRealtimeEfficiency(realtimeEfficiencyBuffer)
+          setRealtimeCurrent(res.data["Payload"]["current_graph"])
+          setRealtimeVoltage(res.data["Payload"]["voltage_graph"])
+          setRealtimePwr(res.data["Payload"]["pwr_graph"])
+          setRealtimeEfficiency(res.data["Payload"]["efficiency_graph"])
         });
     };
 
@@ -206,18 +187,10 @@ function PanelDetail(props) {
         .then(res => {
           setRegion(res.data["Payload"]["region"])
           setStatus(res.data["Payload"]["status"])
-
-          aggregateCurrentBuffer = res.data["Payload"]["current_graph"]
-          setAggregateCurrent(aggregateCurrentBuffer)
-          
-          aggregateVoltageBuffer = res.data["Payload"]["voltage_graph"]
-          setAggregateVoltage(aggregateVoltageBuffer)
-
-          aggregatePwrBuffer = res.data["Payload"]["pwr_graph"]
-          setAggregatePwr(aggregatePwrBuffer)
-
-          aggregateEfficiencyBuffer = res.data["Payload"]["efficiency_graph"]
-          setAggregateEfficiency(aggregateEfficiencyBuffer)
+          setAggregateCurrent(res.data["Payload"]["current_graph"])
+          setAggregateVoltage(res.data["Payload"]["voltage_graph"])
+          setAggregatePwr(res.data["Payload"]["pwr_graph"])
+          setAggregateEfficiency(res.data["Payload"]["efficiency_graph"])
         });
     };
 
@@ -229,57 +202,49 @@ function PanelDetail(props) {
     // An element to be added (A data point).
     // index of 0 is INPUT, index of 1 is OUTPUT.
     const shiftAddTelemetryStacked = (list, inputElem, outputElem) => {
-      for (let i = 0; i < list.length - 1; i++) {
-        list[0]["data"][i]["y"] = list[0]["data"][i+1]["y"]
-        list[1]["data"][i]["y"] = list[1]["data"][i+1]["y"]
+      let newlist = list.slice(0)
+      for (let i = 0; i < newlist.length - 1; i++) {
+        newlist[0]["data"][i]["y"] = newlist[0]["data"][i+1]["y"]
+        newlist[1]["data"][i]["y"] = newlist[1]["data"][i+1]["y"]
       }
-      if (list.length != 0) {
-        list[0]["data"][list.length - 1] = inputElem
-        list[1]["data"][list.length - 1] = outputElem
+      if (newlist.length != 0) {
+        newlist[0]["data"][newlist.length - 1] = inputElem
+        newlist[1]["data"][newlist.length - 1] = outputElem
       } else {
-        list[0]["data"].push(inputElem)
-        list[1]["data"].push(outputElem)
+        newlist[0]["data"].push(inputElem)
+        newlist[1]["data"].push(outputElem)
       }
+      return newlist
     };
 
     const shiftAddTelemetry = (list, elem) => {
-      for (let i = 0; i < list.length - 1; i++) {
-        list[0]["data"][i]["y"] = list[0]["data"][i+1]["y"]
+      let newlist = list.slice(0)
+      for (let i = 0; i < newlist.length - 1; i++) {
+        newlist[0]["data"][i]["y"] = newlist[0]["data"][i+1]["y"]
       }
-      if (list.length != 0) {
-        list[0]["data"][list.length - 1] = elem
+      if (newlist.length != 0) {
+        newlist[0]["data"][newlist.length - 1] = elem
       } else {
-        list[0]["data"].push(elem)
+        newlist[0]["data"].push(elem)
       }
+      return newlist
     };
 
     // Update Graph Data.
     socket.emit('frontend_connect', {'content': panel})
     socket.on('aggregate_update', (data) => {
-      shiftAddTelemetryStacked(aggregateCurrentBuffer, data["CURRENT_IN"], data["CURRENT_OUT"])
-      setAggregateCurrent(aggregateCurrentBuffer)
-
-      shiftAddTelemetryStacked(aggregateVoltageBuffer, data["VOLTAGE_IN"], data["VOLTAGE_OUT"])
-      setAggregateVoltage(aggregateVoltageBuffer)
-
-      shiftAddTelemetryStacked(aggregatePwrBuffer, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"])
-      setAggregatePwr(aggregatePwrBuffer)
-
-      shiftAddTelemetry(aggregateEfficiencyBuffer, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100)
-      setAggregateEfficiency(aggregateEfficiencyBuffer)
+      console.log("Aggregate")
+      setAggregateCurrent(shiftAddTelemetryStacked(aggregateCurrentBuffer, data["CURRENT_IN"], data["CURRENT_OUT"]))
+      setAggregateVoltage(shiftAddTelemetryStacked(aggregateVoltageBuffer, data["VOLTAGE_IN"], data["VOLTAGE_OUT"]))
+      setAggregatePwr(shiftAddTelemetryStacked(aggregatePwrBuffer, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"]))
+      setAggregateEfficiency(shiftAddTelemetry(aggregateEfficiencyBuffer, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100))
     });
     socket.on('realtime_update', (data) => {
-      shiftAddTelemetryStacked(realtimeCurrentBuffer, data["CURRENT_IN"], data["CURRENT_OUT"])
-      setAggregateCurrent(realtimeCurrentBuffer)
-
-      shiftAddTelemetryStacked(realtimeVoltageBuffer, data["VOLTAGE_IN"], data["VOLTAGE_OUT"])
-      setAggregateVoltage(realtimeVoltageBuffer)
-
-      shiftAddTelemetryStacked(realtimePwrBuffer, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"])
-      setAggregatePwr(realtimePwrBuffer)
-
-      shiftAddTelemetry(realtimeEfficiencyBuffer, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100)
-      setAggregateEfficiency(realtimeEfficiencyBuffer)
+      console.log("Realtime")
+      setAggregateCurrent(shiftAddTelemetryStacked(realtimeCurrentBuffer, data["CURRENT_IN"], data["CURRENT_OUT"]))
+      setAggregateVoltage(shiftAddTelemetryStacked(realtimeVoltageBuffer, data["VOLTAGE_IN"], data["VOLTAGE_OUT"]))
+      setAggregatePwr(shiftAddTelemetryStacked(realtimePwrBuffer, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"]))
+      setAggregateEfficiency(shiftAddTelemetry(realtimeEfficiencyBuffer, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100))
     });
   }, []);
 
