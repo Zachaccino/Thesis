@@ -44,8 +44,9 @@ def aggregate_update_available(content_id):
         for sock_id in conntrack:
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
                 if not telemetry:
+                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<0")
                     data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": True}).json()
-                    print(data)
+                    #print(data)
                     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<1")
                     telemetry = {"content_id": content_id, "data": data}
                     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<2")
@@ -67,13 +68,14 @@ def realtime_update_available(content_id):
         for sock_id in conntrack:
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
                 if not telemetry:
-                    data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": False}).json()
-                    print(data)
                     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<4")
-                    telemetry = {"content_id": content_id, "data": data}
+                    data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": False}).json()
+                    #print(data)
                     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<5")
+                    telemetry = {"content_id": content_id, "data": data}
+                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<6")
                 sockets[sock_id].emit("realtime_update_available", telemetry)
-                print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<6")
+                print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<7")
 
 
 # Listening for Messages
