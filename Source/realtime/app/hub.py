@@ -71,6 +71,7 @@ def realtime_update_available(content_id, current_in, voltage_in, current_out, v
 
 # Listening for Messages
 while True:
+    print("HUB LOOP")
     msg = receiver.receive()
     data = msg.data()
     receiver.acknowledge(msg)

@@ -65,5 +65,6 @@ def disconnect(sid):
         sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
     print(conntrack)
 
+print("SOCK0 START")
 web.run_app(wa, host='0.0.0.0', port=SERVER_PORT+sock_id)
 mq.close()

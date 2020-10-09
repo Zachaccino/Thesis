@@ -47,13 +47,12 @@ async def force_update(sid):
 
 @sio.event
 def aggregate_update_available(sid, data):
-    print("Problem happens before here.")
-    print("aggregate Update", data["content_id"])
+    print("SOCK1 Aggregate Update Received", data["content_id"])
     sio.emit("aggregate_update", data=data["data"], room=data["content_id"])
 
 @sio.event
 def realtime_update_available(sid, data):
-    print("realtime Update", data["content_id"])
+    print("SOCK1 Realtime Update Received", data["content_id"])
     sio.emit("realtime_update", data=data["data"], room=data["content_id"])
 
 @sio.event
@@ -66,5 +65,6 @@ def disconnect(sid):
         sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
     print(conntrack)
 
+print("SOCK1 START")
 web.run_app(wa, host='0.0.0.0', port=SERVER_PORT+sock_id)
 mq.close()
