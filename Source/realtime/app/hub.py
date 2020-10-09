@@ -66,7 +66,7 @@ def realtime_update_available(content_id):
         telemetry = None
         for sock_id in conntrack:
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
-                if not telemetry:i
+                if not telemetry:
                     data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": False}).json()
                     print(data)
                     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<4")
