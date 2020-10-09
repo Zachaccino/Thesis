@@ -207,7 +207,7 @@ function PanelDetail(props) {
         newlist[0]["data"][i]["y"] = newlist[0]["data"][i+1]["y"]
         newlist[1]["data"][i]["y"] = newlist[1]["data"][i+1]["y"]
       }
-      if (newlist.length != 0) {
+      if (newlist.length !== 0) {
         newlist[0]["data"][newlist.length - 1] = inputElem
         newlist[1]["data"][newlist.length - 1] = outputElem
       } else {
@@ -222,7 +222,7 @@ function PanelDetail(props) {
       for (let i = 0; i < newlist.length - 1; i++) {
         newlist[0]["data"][i]["y"] = newlist[0]["data"][i+1]["y"]
       }
-      if (newlist.length != 0) {
+      if (newlist.length !== 0) {
         newlist[0]["data"][newlist.length - 1] = elem
       } else {
         newlist[0]["data"].push(elem)
