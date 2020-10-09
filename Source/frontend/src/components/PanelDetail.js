@@ -234,17 +234,17 @@ function PanelDetail(props) {
     socket.emit('frontend_connect', {'content': panel})
     socket.on('aggregate_update', (data) => {
       console.log("Aggregate")
-      // setAggregateCurrent(shiftAddTelemetryStacked(aggregateCurrent, data["CURRENT_IN"], data["CURRENT_OUT"]))
-      // setAggregateVoltage(shiftAddTelemetryStacked(aggregateVoltage, data["VOLTAGE_IN"], data["VOLTAGE_OUT"]))
-      // setAggregatePwr(shiftAddTelemetryStacked(aggregatePwr, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"]))
-      // setAggregateEfficiency(shiftAddTelemetry(aggregateEfficiency, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100))
+      setAggregateCurrent(shiftAddTelemetryStacked(aggregateCurrent, data["CURRENT_IN"], data["CURRENT_OUT"]))
+      setAggregateVoltage(shiftAddTelemetryStacked(aggregateVoltage, data["VOLTAGE_IN"], data["VOLTAGE_OUT"]))
+      setAggregatePwr(shiftAddTelemetryStacked(aggregatePwr, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"]))
+      setAggregateEfficiency(shiftAddTelemetry(aggregateEfficiency, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100))
     });
     socket.on('realtime_update', (data) => {
       console.log("Realtime")
-      // setAggregateCurrent(shiftAddTelemetryStacked(realtimeCurrent, data["CURRENT_IN"], data["CURRENT_OUT"]))
-      // setAggregateVoltage(shiftAddTelemetryStacked(realtimeVoltage, data["VOLTAGE_IN"], data["VOLTAGE_OUT"]))
-      // setAggregatePwr(shiftAddTelemetryStacked(realtimePwr, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"]))
-      // setAggregateEfficiency(shiftAddTelemetry(realtimeEfficiency, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100))
+      setAggregateCurrent(shiftAddTelemetryStacked(realtimeCurrent, data["CURRENT_IN"], data["CURRENT_OUT"]))
+      setAggregateVoltage(shiftAddTelemetryStacked(realtimeVoltage, data["VOLTAGE_IN"], data["VOLTAGE_OUT"]))
+      setAggregatePwr(shiftAddTelemetryStacked(realtimePwr, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"]))
+      setAggregateEfficiency(shiftAddTelemetry(realtimeEfficiency, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100))
     });
   }, []);
 
