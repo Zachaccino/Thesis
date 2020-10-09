@@ -48,7 +48,7 @@ def aggregate_update_available(content_id):
                     data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": True}).json()
                     print(data)
                     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<1")
-                    telemetry = {"content_id": content_id, "data": data}
+                    telemetry = {"content_id": content_id, "data": json.dumps(data)}
                     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<2")
                 print("emitting?")
                 sockets[sock_id].emit("aggregate_update_available", telemetry)
@@ -72,7 +72,7 @@ def realtime_update_available(content_id):
                     data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": False}).json()
                     print(data)
                     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<5")
-                    telemetry = {"content_id": content_id, "data": data}
+                    telemetry = {"content_id": content_id, "data": json.dumps(data)}
                     print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<6")
                 sockets[sock_id].emit("realtime_update_available", telemetry)
                 print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<7")
