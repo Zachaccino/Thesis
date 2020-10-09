@@ -51,7 +51,7 @@ async def aggregate_update_available(sid, data):
     await sio.emit("aggregate_update", data=data["data"], room=data["content_id"])
 
 @sio.event
-def realtime_update_available(sid, data):
+async def realtime_update_available(sid, data):
     print("SOCK0 Realtime Update Received", data["content_id"])
     await sio.emit("realtime_update", data=data["data"], room=data["content_id"])
 
