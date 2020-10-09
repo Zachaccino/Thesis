@@ -20,7 +20,7 @@ conntrack = {}
 # Connect to socket clients
 for i in range(NUMBER_OF_SOCKETS):
     sock = socketio.Client()
-    sock.connect('http://localhost:' + str(SERVER_PORT + i), {"CLIENT_TYPE": "HUB"})
+    sock.connect('http://' + SERVER_ADDRESS + ':' + str(SERVER_PORT + i), {"CLIENT_TYPE": "HUB"})
     sock.emit('force_update')
     sockets.append(sock)
 
@@ -44,10 +44,14 @@ def aggregate_update_available(content_id):
         for sock_id in conntrack:
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
                 if not telemetry:
-                    data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": True})
-                    telemetry = {"content_id": content_id, "data": json.loads(data.content)}
+                    data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": True}).json()
+                    print(data)
+                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<1")
+                    telemetry = {"content_id": content_id, "data": data}
+                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<2")
                 print("emitting?")
                 sockets[sock_id].emit("aggregate_update_available", telemetry)
+                print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<3")
 
 
 # Received a realtime update.
@@ -62,10 +66,14 @@ def realtime_update_available(content_id):
         telemetry = None
         for sock_id in conntrack:
             if content_id in conntrack[sock_id] and conntrack[sock_id][content_id] > 0:
-                if not telemetry:
-                    data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": False})
-                    telemetry = {"content_id": content_id, "data": json.loads(data.content)}
+                if not telemetry:i
+                    data = requests.post("http://" + SERVER_ADDRESS + ":8000/panel_detail", json={"device_id":content_id, "aggregation": False}).json()
+                    print(data)
+                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<4")
+                    telemetry = {"content_id": content_id, "data": data}
+                    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<5")
                 sockets[sock_id].emit("realtime_update_available", telemetry)
+                print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<6")
 
 
 # Listening for Messages

@@ -6,7 +6,7 @@ COPY ./aggregate.py .
 COPY ./liveness.py .
 COPY ./settings.py .
 
-COPY ./app/run.sh .
+COPY ./run.sh .
 
 COPY ./requirements.txt .
 
