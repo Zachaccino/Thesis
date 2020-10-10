@@ -182,7 +182,7 @@ function PanelDetail(props) {
         });
     };
 
-    const fetchAggregateData = () => {
+    const fetchAggregateData = async () => {
       axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": true})
         .then(res => {
           setRegion(res.data["Payload"]["region"])
@@ -198,64 +198,78 @@ function PanelDetail(props) {
     fetchRealtimeData();
     fetchAggregateData();
 
+
     // Provide the telemetry (A list). 
     // An element to be added (A data point).
     // index of 0 is INPUT, index of 1 is OUTPUT.
-    const shiftAddTelemetryStacked = (list, inputElem, outputElem) => {
-      let newlist = list.slice(0)
-      for (let i = 0; i < newlist.length - 1; i++) {
-        newlist[0]["data"][i]["y"] = newlist[0]["data"][i+1]["y"]
-        newlist[1]["data"][i]["y"] = newlist[1]["data"][i+1]["y"]
+    const shiftAddTelemetryStacked = (oldList, inputElem, outputElem) => {
+      let list = oldList.slice(0)
+      for (let i = 0; i < list[0]["data"].length - 1; i++) {
+        list[0]["data"][i]["y"] = list[0]["data"][i+1]["y"]
+        list[1]["data"][i]["y"] = list[1]["data"][i+1]["y"]
       }
-      if (newlist.length !== 0) {
-        newlist[0]["data"][newlist.length - 1] = inputElem
-        newlist[1]["data"][newlist.length - 1] = outputElem
-      } else {
-        newlist[0]["data"].push(inputElem)
-        newlist[1]["data"].push(outputElem)
+      if (list[0]["data"].length !== 0) {
+        list[0]["data"][list[0]["data"].length - 1]["y"] = inputElem
+        list[1]["data"][list[1]["data"].length - 1]["y"] = outputElem
       }
-      return newlist
+      return list
     };
 
-    const shiftAddTelemetry = (list, elem) => {
-      let newlist = list.slice(0)
-      for (let i = 0; i < newlist.length - 1; i++) {
-        newlist[0]["data"][i]["y"] = newlist[0]["data"][i+1]["y"]
+    const shiftAddTelemetry = (oldList, elem) => {
+      let list = oldList.slice(0)
+      for (let i = 0; i < list[0]["data"].length - 1; i++) {
+        list[0]["data"][i]["y"] = list[0]["data"][i+1]["y"]
       }
-      if (newlist.length !== 0) {
-        newlist[0]["data"][newlist.length - 1] = elem
-      } else {
-        newlist[0]["data"].push(elem)
-      }
-      return newlist
+      if (list[0]["data"].length !== 0) {
+        list[0]["data"][list[0]["data"].length - 1]["y"] = elem
+      } 
+      return list
     };
 
     // Update Graph Data.
     socket.emit('frontend_connect', {'content': panel})
+
     socket.on('aggregate_update', (data) => {
-      console.log("Aggregate")
-      setAggregateCurrent(shiftAddTelemetryStacked(aggregateCurrent, data["CURRENT_IN"], data["CURRENT_OUT"]))
-      setAggregateVoltage(shiftAddTelemetryStacked(aggregateVoltage, data["VOLTAGE_IN"], data["VOLTAGE_OUT"]))
-      setAggregatePwr(shiftAddTelemetryStacked(aggregatePwr, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"]))
-      setAggregateEfficiency(shiftAddTelemetry(aggregateEfficiency, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100))
+      setAggregateCurrent(oldTele => {
+        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"])
+      })
+      setAggregateVoltage(oldTele => {
+        return shiftAddTelemetryStacked(oldTele, data["VOLTAGE_IN"], data["VOLTAGE_OUT"])
+      })
+      setAggregatePwr(oldTele => {
+        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"])
+      })
+      setAggregateEfficiency(oldTele => {
+        return shiftAddTelemetry(oldTele, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100)
+      })
     });
+
     socket.on('realtime_update', (data) => {
-      console.log("Realtime")
-      setAggregateCurrent(shiftAddTelemetryStacked(realtimeCurrent, data["CURRENT_IN"], data["CURRENT_OUT"]))
-      setAggregateVoltage(shiftAddTelemetryStacked(realtimeVoltage, data["VOLTAGE_IN"], data["VOLTAGE_OUT"]))
-      setAggregatePwr(shiftAddTelemetryStacked(realtimePwr, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"]))
-      setAggregateEfficiency(shiftAddTelemetry(realtimeEfficiency, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100))
+      setRealtimeCurrent(oldTele => {
+        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"])
+      })
+      
+      setRealtimeVoltage(oldTele => {
+        return shiftAddTelemetryStacked(oldTele, data["VOLTAGE_IN"], data["VOLTAGE_OUT"])
+      })
+
+      setRealtimePwr(oldTele => {
+        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"])
+      })
+
+      setRealtimeEfficiency(oldTele => {
+        return shiftAddTelemetry(oldTele, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100)
+      })
     });
   }, []);
 
   useEffect(()=>{
     const interval = setInterval(() => {
       socket.emit("keep_alive");
-    }, 1000*10);
+    }, 1000*60);
 
     return () => clearInterval(interval);
   }, [])
-
 
   return (
     <Grid container spacing={3}>
@@ -275,31 +289,31 @@ function PanelDetail(props) {
         <ContentTitle title={"Aggregate Statistics"} />
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Current" data={aggregateCurrent} max={10} yLabel={"Current (A)"} />
+        <TrendCard title="Current" data={aggregateCurrent} max={10} yLabel={"Current (A)"} legend={"Recorded Data (Last 4 Hrs)"}/>
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Voltage" data={aggregateVoltage} max={35} yLabel={"Voltage (V)"} />
+        <TrendCard title="Voltage" data={aggregateVoltage} max={35} yLabel={"Voltage (V)"} legend={"Recorded Data (Last 4 Hrs)"}/>
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Power" data={aggregatePwr} max={260} yLabel={"Power (watt)"} />
+        <TrendCard title="Power" data={aggregatePwr} max={260} yLabel={"Power (watt)"} legend={"Recorded Data (Last 4 Hrs)"}/>
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Efficiency" data={aggregateEfficiency} max={100} yLabel={"Percentage"} />
+        <TrendCard title="Efficiency" data={aggregateEfficiency} max={100} yLabel={"Percentage"} legend={"Recorded Data (Last 4 Hrs)"}/>
       </Grid>
       <Grid item xs={12}>
         <ContentTitle title={"Realtime Statistics"} />
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Current" data={realtimeCurrent} max={10} yLabel={"Current (A)"} />
+        <TrendCard title="Current" data={realtimeCurrent} max={10} yLabel={"Current (A)"} legend={"Recorded Sample (This Session)"}/>
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Voltage" data={realtimeVoltage} max={35} yLabel={"Voltage (V)"} />
+        <TrendCard title="Voltage" data={realtimeVoltage} max={35} yLabel={"Voltage (V)"} legend={"Recorded Sample (This Session)"}/>
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Power" data={realtimePwr} max={260} yLabel={"Power (watt)"} />
+        <TrendCard title="Power" data={realtimePwr} max={260} yLabel={"Power (watt)"} legend={"Recorded Sample (This Session)"}/>
       </Grid>
       <Grid item xs={6}>
-        <TrendCard title="Efficiency" data={realtimeEfficiency} max={100} yLabel={"Percentage"} />
+        <TrendCard title="Efficiency" data={realtimeEfficiency} max={100} yLabel={"Percentage"} legend={"Recorded Sample (This Session)"}/>
       </Grid>
       <Grid item xs={12}>
         <ContentTitle title={"Control Panel"} />

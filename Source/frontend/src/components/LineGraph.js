@@ -22,7 +22,7 @@ function LineGraph(props) {
         data={props.data}
         margin={{ top: 10, right: 15, bottom: 40, left: 70 }}
         xScale={{ type: 'point' }}
-        yScale={{ type: 'linear', min: -5, max: props.max, stacked: false, reverse: false }}
+        yScale={{ type: 'linear', min: -props.max, max: props.max, stacked: false, reverse: false }}
         axisTop={null}
         axisRight={null}
         axisBottom={{
@@ -30,9 +30,9 @@ function LineGraph(props) {
           tickSize: 0,
           tickPadding: 5,
           tickRotation: 90,
-          legend: 'Time Delta',
+          legend: props.legend,
           legendOffset: 30,
-          legendPosition: 'middle',
+          legendPosition: 'left',
           format: () => null,
         }}
         axisLeft={{
@@ -44,6 +44,7 @@ function LineGraph(props) {
           legendOffset: -60,
           legendPosition: 'middle'
         }}
+        colors={{ scheme: 'category10' }}
         lineWidth={2}
         enableGridX={false}
         enableGridY={false}
@@ -64,7 +65,7 @@ function LineGraph(props) {
             direction: 'row',
             justify: false,
             translateX: -15,
-            translateY: 38,
+            translateY: 40.5,
             itemsSpacing: 0,
             itemDirection: 'left-to-right',
             itemWidth: 80,
