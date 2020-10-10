@@ -32,7 +32,7 @@ function LineGraph(props) {
           tickRotation: 90,
           legend: props.legend,
           legendOffset: 30,
-          legendPosition: 'left',
+          legendPosition: 'start',
           format: () => null,
         }}
         axisLeft={{

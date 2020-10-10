@@ -230,6 +230,8 @@ function PanelDetail(props) {
     socket.emit('frontend_connect', {'content': panel})
 
     socket.on('aggregate_update', (data) => {
+      console.log("Aggregate")
+      console.log(data["TIME"])
       setAggregateCurrent(oldTele => {
         return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"])
       })
@@ -245,6 +247,8 @@ function PanelDetail(props) {
     });
 
     socket.on('realtime_update', (data) => {
+      console.log("Realtime")
+      console.log(data["TIME"])
       setRealtimeCurrent(oldTele => {
         return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"])
       })
