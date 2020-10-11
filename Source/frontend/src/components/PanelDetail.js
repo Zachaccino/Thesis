@@ -15,7 +15,6 @@ import axios from 'axios';
 import StatusCard from "./StatusCard";
 import openSocket from 'socket.io-client';
 import RemoteSocket from "./RemoteSocket"
-import Panels from './Panels';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -283,6 +282,7 @@ function PanelDetail(props) {
         return shiftAddTelemetry(oldTele, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100, data["TIME"])
       })
     });
+
   }, []);
 
   useEffect(()=>{
@@ -294,62 +294,64 @@ function PanelDetail(props) {
   }, [])
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <ContentTitle title={"Device Information"} />
+    <React.Fragment>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <ContentTitle title={"Device Information"} />
+        </Grid>
+        <Grid item xs={4}>
+          <StatusCard title="Device ID" value={panel} />
+        </Grid>
+        <Grid item xs={4}>
+          <StatusCard title="Region" value={region} />
+        </Grid>
+        <Grid item xs={4}>
+          <StatusCard title="Status" value={status} />
+        </Grid>
+        <Grid item xs={12}>
+          <ContentTitle title={"Aggregate Statistics"} />
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Current (Last 4 Hrs)" data={aggregateCurrent} max={10} yLabel={"Current (A)"} legend={"Time"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Voltage (Last 4 Hrs)" data={aggregateVoltage} max={35} yLabel={"Voltage (V)"} legend={"Time"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Power (Last 4 Hrs)" data={aggregatePwr} max={260} yLabel={"Power (watt)"} legend={"Time"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Efficiency (Last 4 Hrs)" data={aggregateEfficiency} max={100} yLabel={"Percentage"} legend={"Time"}/>
+        </Grid>
+        <Grid item xs={12}>
+          <ContentTitle title={"Realtime Statistics"} />
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Current (Current Session)" data={realtimeCurrent} max={10} yLabel={"Current (A)"} legend={"Recorded Sample"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Voltage (Current Session)" data={realtimeVoltage} max={35} yLabel={"Voltage (V)"} legend={"Recorded Sample"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Power (Current Session)" data={realtimePwr} max={260} yLabel={"Power (watt)"} legend={"Recorded Sample"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Efficiency (Current Session)" data={realtimeEfficiency} max={100} yLabel={"Percentage"} legend={"Recorded Sample"}/>
+        </Grid>
+        <Grid item xs={12}>
+          <ContentTitle title={"Control Panel"} />
+        </Grid>
+        <Grid item xs={6}>
+          <CurrentControlPanel />
+        </Grid>
+        <Grid item xs={6}>
+          <VoltageControlPanel />
+        </Grid>
+        <Grid item xs={12}>
+          <PowerControlPanel />
+        </Grid>
       </Grid>
-      <Grid item xs={4}>
-        <StatusCard title="Device ID" value={panel} />
-      </Grid>
-      <Grid item xs={4}>
-        <StatusCard title="Region" value={region} />
-      </Grid>
-      <Grid item xs={4}>
-        <StatusCard title="Status" value={status} />
-      </Grid>
-      <Grid item xs={12}>
-        <ContentTitle title={"Aggregate Statistics"} />
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Current" data={aggregateCurrent} max={10} yLabel={"Current (A)"} legend={"Recorded Data (Last 4 Hrs)"}/>
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Voltage" data={aggregateVoltage} max={35} yLabel={"Voltage (V)"} legend={"Recorded Data (Last 4 Hrs)"}/>
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Power" data={aggregatePwr} max={260} yLabel={"Power (watt)"} legend={"Recorded Data (Last 4 Hrs)"}/>
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Efficiency" data={aggregateEfficiency} max={100} yLabel={"Percentage"} legend={"Recorded Data (Last 4 Hrs)"}/>
-      </Grid>
-      <Grid item xs={12}>
-        <ContentTitle title={"Realtime Statistics"} />
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Current" data={realtimeCurrent} max={10} yLabel={"Current (A)"} legend={"Recorded Sample (This Session)"}/>
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Voltage" data={realtimeVoltage} max={35} yLabel={"Voltage (V)"} legend={"Recorded Sample (This Session)"}/>
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Power" data={realtimePwr} max={260} yLabel={"Power (watt)"} legend={"Recorded Sample (This Session)"}/>
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Efficiency" data={realtimeEfficiency} max={100} yLabel={"Percentage"} legend={"Recorded Sample (This Session)"}/>
-      </Grid>
-      <Grid item xs={12}>
-        <ContentTitle title={"Control Panel"} />
-      </Grid>
-      <Grid item xs={6}>
-        <CurrentControlPanel />
-      </Grid>
-      <Grid item xs={6}>
-        <VoltageControlPanel />
-      </Grid>
-      <Grid item xs={12}>
-        <PowerControlPanel />
-      </Grid>
-    </Grid>
+    </React.Fragment>
   )
 }
 
