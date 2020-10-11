@@ -157,15 +157,15 @@ function PanelDetail(props) {
   const [region, setRegion] = useState("Loading");
   const [status, setStatus] = useState("Loading");
 
-  const [realtimeCurrent, setRealtimeCurrent] = useState([{"id": "Input", "data": []}, {"id": "Output", "data": []}]);
-  const [realtimeVoltage, setRealtimeVoltage] = useState([{"id": "Input", "data": []}, {"id": "Output", "data": []}]);
-  const [realtimePwr, setRealtimePwr] = useState([{"id": "Input", "data": []}, {"id": "Output", "data": []}]);
-  const [realtimeEfficiency, setRealtimeEfficiency] = useState([{"id": "Input", "data": []}, {"id": "Output", "data": []}]);
+  const [realtimeCurrent, setRealtimeCurrent] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [realtimeVoltage, setRealtimeVoltage] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [realtimePwr, setRealtimePwr] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [realtimeEfficiency, setRealtimeEfficiency] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
 
-  const [aggregateCurrent, setAggregateCurrent] = useState([{"id": "Input", "data": []}, {"id": "Output", "data": []}]);
-  const [aggregateVoltage, setAggregateVoltage] = useState([{"id": "Input", "data": []}, {"id": "Output", "data": []}]);
-  const [aggregatePwr, setAggregatePwr] = useState([{"id": "Input", "data": []}, {"id": "Output", "data": []}]);
-  const [aggregateEfficiency, setAggregateEfficiency] = useState([{"id": "Input", "data": []}, {"id": "Output", "data": []}]);
+  const [aggregateCurrent, setAggregateCurrent] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [aggregateVoltage, setAggregateVoltage] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [aggregatePwr, setAggregatePwr] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [aggregateEfficiency, setAggregateEfficiency] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
 
   const socket = openSocket(RemoteSocket());
   
@@ -173,6 +173,13 @@ function PanelDetail(props) {
     const fetchRealtimeData = () => {
       axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": false})
         .then(res => {
+          res.data["Payload"]["current_graph"][0].time = -1
+          res.data["Payload"]["current_graph"][1].time = -1
+          res.data["Payload"]["voltage_graph"][0].time = -1
+          res.data["Payload"]["voltage_graph"][1].time = -1
+          res.data["Payload"]["pwr_graph"][0].time = -1
+          res.data["Payload"]["pwr_graph"][1].time = -1
+          res.data["Payload"]["efficiency_graph"][0].time = -1
           setRegion(res.data["Payload"]["region"])
           setStatus(res.data["Payload"]["status"])
           setRealtimeCurrent(res.data["Payload"]["current_graph"])
@@ -182,9 +189,16 @@ function PanelDetail(props) {
         });
     };
 
-    const fetchAggregateData = async () => {
+    const fetchAggregateData = () => {
       axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": true})
         .then(res => {
+          res.data["Payload"]["current_graph"][0].time = -1
+          res.data["Payload"]["current_graph"][1].time = -1
+          res.data["Payload"]["voltage_graph"][0].time = -1
+          res.data["Payload"]["voltage_graph"][1].time = -1
+          res.data["Payload"]["pwr_graph"][0].time = -1
+          res.data["Payload"]["pwr_graph"][1].time = -1
+          res.data["Payload"]["efficiency_graph"][0].time = -1
           setRegion(res.data["Payload"]["region"])
           setStatus(res.data["Payload"]["status"])
           setAggregateCurrent(res.data["Payload"]["current_graph"])
@@ -198,11 +212,13 @@ function PanelDetail(props) {
     fetchRealtimeData();
     fetchAggregateData();
 
-
     // Provide the telemetry (A list). 
     // An element to be added (A data point).
     // index of 0 is INPUT, index of 1 is OUTPUT.
-    const shiftAddTelemetryStacked = (oldList, inputElem, outputElem) => {
+    const shiftAddTelemetryStacked = (oldList, inputElem, outputElem, timestamp) => {
+      if (timestamp === oldList[0].time) {
+        return oldList
+      }
       let list = oldList.slice(0)
       for (let i = 0; i < list[0]["data"].length - 1; i++) {
         list[0]["data"][i]["y"] = list[0]["data"][i+1]["y"]
@@ -212,10 +228,15 @@ function PanelDetail(props) {
         list[0]["data"][list[0]["data"].length - 1]["y"] = inputElem
         list[1]["data"][list[1]["data"].length - 1]["y"] = outputElem
       }
+      list[0].time = timestamp
+      list[1].time = timestamp
       return list
     };
 
-    const shiftAddTelemetry = (oldList, elem) => {
+    const shiftAddTelemetry = (oldList, elem, timestamp) => {
+      if (timestamp === oldList[0].time) {
+        return oldList
+      }
       let list = oldList.slice(0)
       for (let i = 0; i < list[0]["data"].length - 1; i++) {
         list[0]["data"][i]["y"] = list[0]["data"][i+1]["y"]
@@ -223,6 +244,7 @@ function PanelDetail(props) {
       if (list[0]["data"].length !== 0) {
         list[0]["data"][list[0]["data"].length - 1]["y"] = elem
       } 
+      list[0].time = timestamp
       return list
     };
 
@@ -230,39 +252,35 @@ function PanelDetail(props) {
     socket.emit('frontend_connect', {'content': panel})
 
     socket.on('aggregate_update', (data) => {
-      console.log("Aggregate")
-      console.log(data["TIME"])
       setAggregateCurrent(oldTele => {
-        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"])
+        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"], data["TIME"])
       })
       setAggregateVoltage(oldTele => {
-        return shiftAddTelemetryStacked(oldTele, data["VOLTAGE_IN"], data["VOLTAGE_OUT"])
+        return shiftAddTelemetryStacked(oldTele, data["VOLTAGE_IN"], data["VOLTAGE_OUT"], data["TIME"])
       })
       setAggregatePwr(oldTele => {
-        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"])
+        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"], data["TIME"])
       })
       setAggregateEfficiency(oldTele => {
-        return shiftAddTelemetry(oldTele, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100)
+        return shiftAddTelemetry(oldTele, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100, data["TIME"])
       })
     });
 
     socket.on('realtime_update', (data) => {
-      console.log("Realtime")
-      console.log(data["TIME"])
       setRealtimeCurrent(oldTele => {
-        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"])
+        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"], data["TIME"])
       })
       
       setRealtimeVoltage(oldTele => {
-        return shiftAddTelemetryStacked(oldTele, data["VOLTAGE_IN"], data["VOLTAGE_OUT"])
+        return shiftAddTelemetryStacked(oldTele, data["VOLTAGE_IN"], data["VOLTAGE_OUT"], data["TIME"])
       })
 
       setRealtimePwr(oldTele => {
-        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"])
+        return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"], data["TIME"])
       })
 
       setRealtimeEfficiency(oldTele => {
-        return shiftAddTelemetry(oldTele, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100)
+        return shiftAddTelemetry(oldTele, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100, data["TIME"])
       })
     });
   }, []);
