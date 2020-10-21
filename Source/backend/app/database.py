@@ -259,6 +259,27 @@ class Database:
                 }
             }
         )
+    
+    def to_csv(self, device_id):
+        telemetries = self.db.devices.find_one({"device_id": device_id})["aggregate_telemetries"]
+        lines = [["Time (Minute)", "CurrentIn", "VoltageIn", "CurrentOut", "VoltageOut"]]
+        csv_string = ""
+
+        for i, t in enumerate(telemetries):
+            line = []
+            line.append(str(i))
+            line.append(str(t["current_in"]))
+            line.append(str(t["voltage_in"]))
+            line.append(str(t["current_out"]))
+            line.append(str(t["voltage_out"]))
+            lines.append(line)
+
+        out = open("telemetries.csv", "w+")
+
+        for l in lines:
+            csv_string += (",".join(l) + "<br>")
+        
+        return csv_string
 
     def server_status(self):
         return 'Normal'

@@ -20,7 +20,6 @@ CORS(app)
 # Setting up Mongo DB.
 db = Database(DB_ADDRESS, DB_USERNAME, DB_PASSWORD)
 db.connect()
-db.init()
 
 # Setting up Redis Async Job Queue.
 q = Queue(connection=Redis(REDIS_ADDRESS, REDIS_PORT))
@@ -28,7 +27,6 @@ q = Queue(connection=Redis(REDIS_ADDRESS, REDIS_PORT))
 # Setting up ConnCount.
 cc = ConnCount(REDIS_ADDRESS, REDIS_PORT)
 cc.connect()
-cc.reset()
 
 # Generate a random device id.
 def generate_device_id(length=16):
@@ -193,8 +191,12 @@ def request_port():
     if not best_sock:
         return {"sock_id": -1}
 
-    #cc.put(str(best_sock), conncount[best_sock]["value"]+1)
-    return {"sock_id": int(best_sock), "DEBUG": conncount}
+    return {"sock_id": int(best_sock)}
+
+
+@ app.route('/csv/<device_id>', methods=['GET'])
+def csv(device_id):
+    return db.to_csv(device_id)
 
 
 if __name__ == '__main__':

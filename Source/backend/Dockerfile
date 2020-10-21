@@ -9,6 +9,7 @@ COPY ./app/server.py .
 COPY ./app/settings.py .
 COPY ./app/worker.py .
 COPY ./app/wsgi.py .
+COPY ./app/init.py .
 
 COPY ./app/run.sh .
 
