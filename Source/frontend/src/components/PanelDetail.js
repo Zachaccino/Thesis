@@ -331,6 +331,9 @@ function PanelDetail(props) {
         <Grid item xs={4}>
           <StatusCard title="Status" value={status} />
         </Grid>
+        <Grid item xs={4}>
+          <StatusCard title="Listening Port" value={comPort} />
+        </Grid>
         <Grid item xs={12}>
           <ContentTitle title={"Aggregate Statistics"} />
         </Grid>

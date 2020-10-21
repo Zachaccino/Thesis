@@ -196,7 +196,7 @@ def request_port():
     if not best_sock:
         return {"sock_id": -1}
 
-    cc.put(str(best_sock), conncount[best_sock]["value"]+1)
+    #cc.put(str(best_sock), conncount[best_sock]["value"]+1)
     return {"sock_id": int(best_sock)}
 
 
