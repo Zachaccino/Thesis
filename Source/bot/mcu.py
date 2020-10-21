@@ -3,16 +3,8 @@ import random
 import time
 from threading import Thread
 import os
+from settings import SERVER_ADDRESS, COUNT
 
-server_address = os.environ.get("SERVER_ADDRESS")
-
-if not server_address:
-    exit(1)
-
-# Configuration
-counts = 10
-server = 'http://' + server_address + ':8000'
-debug = False
 
 # Read IDs
 f = open("mcu_ids", "r")
@@ -27,17 +19,11 @@ f.close()
 
 # Register All Regions
 def register_regions(region):
-    requests.post(server + "register_region", json={"region_name": region})
+    requests.post(SERVER_ADDRESS + "/register_region", json={"region_name": region})
 
 
 for r in region_pool:
     register_regions(r)
-
-
-# Helpers
-def dprint(msg):
-    if debug:
-        print(msg)
 
 
 def id_to_region(id):
@@ -45,15 +31,13 @@ def id_to_region(id):
 
 
 def register_device(id):
-    r = requests.post(server + "register_device",
+    r = requests.post(SERVER_ADDRESS + "/register_device",
                       json={"device_id": id})
-    dprint(r.content)
 
 
 def assign_device_to_region(id, region):
-    r = requests.post(server + "assign_to_region",
+    r = requests.post(SERVER_ADDRESS + "/assign_to_region",
                       json={"device_id": id, "region_name": region})
-    dprint(r.content)
 
 
 def deviation():
@@ -61,15 +45,13 @@ def deviation():
 
 
 def send_telemetries(id, current, voltage):
-    r = requests.post(server + "add_telemetry",
+    r = requests.post(SERVER_ADDRESS + "/add_telemetry",
                       json={"device_id": id, "current": current, "voltage": voltage})
-    dprint(r.content)
 
 
 def pull_events(id):
-    r = requests.post(server + "pull_event",
+    r = requests.post(SERVER_ADDRESS + "/pull_event",
                       json={"device_id": id})
-    dprint(r.content.decode("utf-8"))
 
     events = r.content.decode("utf-8").split(",")
     res = []
@@ -83,14 +65,12 @@ def pull_events(id):
             value = float(events[i])
             res.append((code, value))
         i += 1
-    dprint(res)
     return res
 
 
 def push_events(id, code, value):
-    r = requests.post(server + "push_event",
+    r = requests.post(SERVER_ADDRESS + "/push_event",
                       json={"device_id": id, "event_code": code, "event_value": value})
-    dprint(r.content)
 
 
 # Worker
@@ -119,14 +99,11 @@ def worker(id):
         
         c_deviation = deviation()
         v_deviation = deviation()
-
-
-
         time.sleep(1)
 
 workers = []
 
-for i in range(counts):
+for i in range(COUNT):
   t = Thread(target=worker, args=(id_pool[i],))
   t.start()
   workers.append(t)

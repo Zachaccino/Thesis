@@ -15,6 +15,7 @@ import axios from 'axios';
 import StatusCard from "./StatusCard";
 import openSocket from 'socket.io-client';
 import RemoteSocket from "./RemoteSocket"
+import Link from '@material-ui/core/Link';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -133,6 +134,51 @@ function SwitchControlPanel(name, action, desc, event_code, event_value) {
   )
 }
 
+function DownloadCSV(name, desc, action) {
+  const classes = useStyles();
+  let { panel } = useParams();
+
+  return (
+    <Paper variant="outlined" className={classes.paper}>
+      <Grid
+        container
+        direction="column"
+        justify="center"
+        alignItems="stretch"
+      >
+        <Grid item>
+          <Typography variant="h6" color='textSecondary'>
+            <Box fontWeight="fontWeightBold">
+              {name}
+            </Box>
+          </Typography>
+        </Grid>
+        <Grid item>
+          <Typography variant="subtitle1" color='textSecondary'>
+            <Box fontWeight="fontWeightBold">
+              {desc}
+            </Box>
+          </Typography>
+        </Grid>
+        <Grid item>
+          <Grid
+            container
+            direction="column"
+            justify="center"
+            alignItems="flex-end"
+          >
+            <Grid item>
+              <Link href={RemoteServer()+"/csv/"+panel} color="inherit">
+                {action}
+              </Link>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
+    </Paper>
+  )
+}
+
 function CurrentControlPanel() {
   return (
     SliderControlPanel("Change Current", 5, 1, 0, 15, "current")
@@ -148,6 +194,12 @@ function VoltageControlPanel() {
 function PowerControlPanel() {
   return (
     SwitchControlPanel("Power Setting", "Shutdown", "This will shutdown the power converter.", "powerdown", 1)
+  )
+}
+
+function DownloadCSVPanel() {
+  return (
+    DownloadCSV("Download CSV", "You can download the recorded data in CSV format.", "Download")
   )
 }
 
@@ -370,6 +422,9 @@ function PanelDetail(props) {
         </Grid>
         <Grid item xs={12}>
           <PowerControlPanel />
+        </Grid>
+        <Grid item xs={12}>
+          <DownloadCSVPanel />
         </Grid>
       </Grid>
     </React.Fragment>
