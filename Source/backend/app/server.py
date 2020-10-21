@@ -186,6 +186,7 @@ def sync_conncount():
 def request_port():
     best_sock = None
     conncount = cc.get_all()
+    print(conncount)
     for sock_id in conncount:
         if not best_sock:
             best_sock = sock_id

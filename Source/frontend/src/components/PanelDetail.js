@@ -167,8 +167,31 @@ function PanelDetail(props) {
   const [aggregateEfficiency, setAggregateEfficiency] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
 
   const socket = openSocket(RemoteSocket());
-  
+
+  const [comPort, setComPort] = useState(-1);
+
   useEffect(() => {
+    const fetchComPort = () => {
+      axios.get(RemoteServer() + '/request_port')
+        .then(res => {
+          setComPort((old)=>{
+            console.log("Setting Port " + res.data["sock_id"])
+            return res.data["sock_id"] + 5000
+          })
+        });
+    };
+
+    fetchComPort();
+  }, [])
+
+  useEffect(() => {
+    // Don't do anything since the port is not available.
+    if (comPort === -1) {
+      console.log("Port not available.")
+      return
+    }
+    console.log("Listening on " + comPort)
+
     const fetchRealtimeData = () => {
       axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": false})
         .then(res => {
@@ -283,7 +306,7 @@ function PanelDetail(props) {
       })
     });
 
-  }, []);
+  }, [comPort]);
 
   useEffect(()=>{
     const interval = setInterval(() => {
