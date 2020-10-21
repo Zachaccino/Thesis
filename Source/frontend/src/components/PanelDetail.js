@@ -166,7 +166,7 @@ function PanelDetail(props) {
   const [aggregatePwr, setAggregatePwr] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
   const [aggregateEfficiency, setAggregateEfficiency] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
 
-  const socket = openSocket(RemoteSocket());
+  let socket = undefined;
 
   const [comPort, setComPort] = useState(-1);
 
@@ -271,6 +271,8 @@ function PanelDetail(props) {
       return list
     };
 
+    socket = openSocket(RemoteSocket()+comPort);
+
     // Update Graph Data.
     socket.emit('frontend_connect', {'content': panel})
 
@@ -309,13 +311,6 @@ function PanelDetail(props) {
 
   }, [comPort]);
 
-  useEffect(()=>{
-    const interval = setInterval(() => {
-      socket.emit("keep_alive");
-    }, 1000*60);
-
-    return () => clearInterval(interval);
-  }, [])
 
   return (
     <React.Fragment>
