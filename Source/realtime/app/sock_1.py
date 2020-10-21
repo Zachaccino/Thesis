@@ -1,14 +1,16 @@
-from settings import PULSAR_ADDRESS, SERVER_ADDRESS, SERVER_PORT
+from settings import PULSAR_ADDRESS, SERVER_ADDRESS, SERVER_PORT, BACKEND_ADDRESS
 import pulsar
 import socketio
 from aiohttp import web
 import json
+import requests
 
 
 sock_id = 1
 socket_name = "SOCKET"+str(sock_id)
 conntrack = {}
 sidtrack = {}
+conncount = 0
 
 mq = pulsar.Client(PULSAR_ADDRESS)
 receiver = mq.subscribe(socket_name, subscription_name=socket_name)
@@ -21,12 +23,12 @@ sio.attach(wa)
 
 @sio.event
 def connect(sid, env):
-    print(conntrack)
     print('connected.')
     
 @sio.event
 async def frontend_connect(sid, data):
-    print(conntrack)
+    global conncount
+    global conntrack
     room = data["content"]
     if room not in conntrack:
         conntrack[room] = 1
@@ -36,6 +38,9 @@ async def frontend_connect(sid, data):
     print("ENTER ROOM", room)
     sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
     sidtrack[sid] = room
+    conncount += 1
+    requests.post(BACKEND_ADDRESS + "/sync_conncount", json={"sock_id":str(sock_id), "count":conncount})
+    
 
 @sio.event
 async def keep_alive(sid):
@@ -46,25 +51,29 @@ async def force_update(sid):
     print('Force update')
 
 @sio.event
-def aggregate_update_available(sid, data):
-    print("SOCK1 Aggregate Update Received", data["content_id"])
-    sio.emit("aggregate_update", data=data["data"], room=data["content_id"])
+async def aggregate_update_available(sid, data):
+    print("SOCK0 Aggregate Update Received", data["content_id"])
+    await sio.emit("aggregate_update", data=data["data"], room=data["content_id"])
 
 @sio.event
-def realtime_update_available(sid, data):
-    print("SOCK1 Realtime Update Received", data["content_id"])
-    sio.emit("realtime_update", data=data["data"], room=data["content_id"])
+async def realtime_update_available(sid, data):
+    print("SOCK0 Realtime Update Received", data["content_id"])
+    await sio.emit("realtime_update", data=data["data"], room=data["content_id"])
 
 @sio.event
 def disconnect(sid):
+    global conncount
+    global conntrack
     print(conntrack)
     print('disconnected from server')
     if sid in sidtrack:
         conntrack[sidtrack[sid]] -= 1
         del sidtrack[sid] 
         sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
+        conncount -= 1
+        requests.post(BACKEND_ADDRESS + "/sync_conncount", json={"sock_id":str(sock_id), "count":conncount})
     print(conntrack)
 
-print("SOCK1 START")
+print("SOCK0 START")
 web.run_app(wa, host='0.0.0.0', port=SERVER_PORT+sock_id)
 mq.close()
