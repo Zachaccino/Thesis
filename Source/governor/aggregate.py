@@ -10,7 +10,7 @@ import json
 # Aggregate telemetries every minute.
 def aggregate_telemetry():
     # Period in Seconds
-    period = 10
+    period = 60
 
     # Database Conn
     client = pymongo.MongoClient(DB_ADDRESS, username=DB_USERNAME, password=DB_PASSWORD)

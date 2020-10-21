@@ -312,7 +312,7 @@ function PanelDetail(props) {
           <ContentTitle title={"Aggregate Statistics"} />
         </Grid>
         <Grid item xs={6}>
-          <TrendCard title="Current (Last 4 Hrs)" data={aggregateCurrent} max={10} yLabel={"Current (A)"} legend={"Time"}/>
+          <TrendCard title="Current (Last 4 Hrs)" data={aggregateCurrent} max={25} yLabel={"Current (A)"} legend={"Time"}/>
         </Grid>
         <Grid item xs={6}>
           <TrendCard title="Voltage (Last 4 Hrs)" data={aggregateVoltage} max={35} yLabel={"Voltage (V)"} legend={"Time"}/>
@@ -327,7 +327,7 @@ function PanelDetail(props) {
           <ContentTitle title={"Realtime Statistics"} />
         </Grid>
         <Grid item xs={6}>
-          <TrendCard title="Current (Current Session)" data={realtimeCurrent} max={10} yLabel={"Current (A)"} legend={"Recorded Sample"}/>
+          <TrendCard title="Current (Current Session)" data={realtimeCurrent} max={25} yLabel={"Current (A)"} legend={"Recorded Sample"}/>
         </Grid>
         <Grid item xs={6}>
           <TrendCard title="Voltage (Current Session)" data={realtimeVoltage} max={35} yLabel={"Voltage (V)"} legend={"Recorded Sample"}/>
