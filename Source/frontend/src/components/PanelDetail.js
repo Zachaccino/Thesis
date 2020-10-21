@@ -176,6 +176,7 @@ function PanelDetail(props) {
         .then(res => {
           setComPort((old)=>{
             console.log("Setting Port " + res.data["sock_id"])
+            console.log(res.data["DEBUG"])
             return res.data["sock_id"] + 5000
           })
         });

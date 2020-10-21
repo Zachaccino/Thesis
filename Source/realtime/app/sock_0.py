@@ -20,7 +20,7 @@ sio = socketio.AsyncServer(engineio_logger=True, cors_allowed_origins="*")
 wa = web.Application()
 sio.attach(wa)
 
-requests.post(BACKEND_ADDRESS + "/sync_conncount", json={"sock_id":str(sock_id), "count":conncount})
+requests.post(BACKEND_ADDRESS + "/sync_conncount", json={"sock_id":sock_id, "count":conncount})
 
 @sio.event
 def connect(sid, env):
@@ -40,7 +40,7 @@ async def frontend_connect(sid, data):
     sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
     sidtrack[sid] = room
     conncount += 1
-    requests.post(BACKEND_ADDRESS + "/sync_conncount", json={"sock_id":str(sock_id), "count":conncount})
+    requests.post(BACKEND_ADDRESS + "/sync_conncount", json={"sock_id":sock_id, "count":conncount})
     
 
 @sio.event
@@ -72,7 +72,7 @@ def disconnect(sid):
         del sidtrack[sid] 
         sender.send(json.dumps({"TYPE": "CONNTRACK_UPDATE", "SOCK_ID": sock_id, "STATE":conntrack}).encode('utf-8'))
         conncount -= 1
-        requests.post(BACKEND_ADDRESS + "/sync_conncount", json={"sock_id":str(sock_id), "count":conncount})
+        requests.post(BACKEND_ADDRESS + "/sync_conncount", json={"sock_id":sock_id, "count":conncount})
     print(conntrack)
 
 print("SOCK0 START")
