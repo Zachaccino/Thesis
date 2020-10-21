@@ -20,6 +20,7 @@ sio = socketio.AsyncServer(engineio_logger=True, cors_allowed_origins="*")
 wa = web.Application()
 sio.attach(wa)
 
+requests.post(BACKEND_ADDRESS + "/sync_conncount", json={"sock_id":str(sock_id), "count":conncount})
 
 @sio.event
 def connect(sid, env):
