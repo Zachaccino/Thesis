@@ -86,7 +86,6 @@ def panels():
 def panel_detail():
     device_id = request.json['device_id']
     aggregation = request.json['aggregation']
-    print(aggregation)
     if not db.device_exist(device_id):
         return response("Device doest not exists.")
 
@@ -112,7 +111,6 @@ def add_telemetry():
     current_out = float(request.json['current_out'])
     voltage_out = float(request.json['voltage_out'])
     q.enqueue(add_telemetry_worker, args=(device_id, current_in, voltage_in, current_out, voltage_out))
-    print(device_id)
     events = db.serialise_events(device_id)
     return events
 
@@ -161,8 +159,6 @@ def assign_to_region():
 @ app.route('/register_region', methods=['POST'])
 def register_region():
     region_name = request.json['region_name']
-    print(region_name)
-
     if not db.region_exist(region_name):
         db.insert_region(region_name)
         return response('Region successfully added.')
@@ -176,8 +172,8 @@ def sync_conncount():
     sock_id = request.json['sock_id']
     # Count is also an integer.
     count = request.json['count']
-    print(sock_id)
-    print(count)
+    print("SOCKID ", sock_id)
+    print("COUNT ", count)
     # However, json key must be string, so we must convert it from int to str.
     cc.put(str(sock_id), count)
     return "OK"
