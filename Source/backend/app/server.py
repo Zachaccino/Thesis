@@ -176,7 +176,8 @@ def sync_conncount():
     sock_id = int(request.json['sock_id'])
     # Count is also an integer.
     count = int(request.json['count'])
-
+    print(sock_id)
+    print(count)
     # However, json key must be string, so we must convert it from int to str.
     cc.put(str(sock_id), count)
     return "OK"
