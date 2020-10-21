@@ -173,9 +173,9 @@ def register_region():
 @ app.route('/sync_conncount', methods=['POST'])
 def sync_conncount():
     # Sock_ID should be an integer.
-    sock_id = int(request.json['sock_id'])
+    sock_id = request.json['sock_id']
     # Count is also an integer.
-    count = int(request.json['count'])
+    count = request.json['count']
     print(sock_id)
     print(count)
     # However, json key must be string, so we must convert it from int to str.
