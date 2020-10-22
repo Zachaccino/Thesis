@@ -188,10 +188,13 @@ def request_port():
         elif conncount[sock_id]["value"] < conncount[best_sock]["value"]:
             best_sock = sock_id
     
+    # Hardcoding, Since Redis seems to evict the key on low memory.
     if not best_sock:
-        return {"sock_id": -1}
+        cc.put("0", 0)
+        cc.put("1", 0)
+        return {"sock_id": 0, "DEBUG": conncount}
 
-    return {"sock_id": int(best_sock)}
+    return {"sock_id": int(best_sock), "DEBUG": conncount}
 
 
 @ app.route('/csv/<device_id>', methods=['GET'])
