@@ -128,9 +128,9 @@ int main() {
     
     while (true) {
         RealVoltageIn = 11 * DigitalVoltageIn.read() * Vref;   //  Voltage divider 10:1
-        RealCurrentIn   =   -(4.9031 * DigitalCurrentIn.read() * Vref * 3 / 2 - 12.414);    //  Input current using 10A sensor, voltage divider 1:2 applied, why negative?
+        RealCurrentIn   =   (2.5 * DigitalCurrentIn.read() * Vref -1.25);    //  Input current using 10A sensor, voltage divider 1:2 applied, why negative?
         RealVoltageOut  =   11 * DigitalVoltageOut.read() * Vref;    //  Voltage divider 10:1
-        RealCurrentOut  =   -10 * DigitalCurrentOut.read() * Vref +25;   //  Output current using new sensor, why negative?
+        RealCurrentOut  =   -(10 * DigitalCurrentOut.read() * Vref - 25);   //  Output current using new sensor, why negative?
         Index++;
         
         if(Index == DisplayRate/5*n){
