@@ -31,12 +31,12 @@ def id_to_region(id):
 
 
 def register_device(id):
-    r = requests.post(BACKEND_ADDRESS + "/register_device",
+    requests.post(BACKEND_ADDRESS + "/register_device",
                       json={"device_id": id})
 
 
 def assign_device_to_region(id, region):
-    r = requests.post(BACKEND_ADDRESS + "/assign_to_region",
+    requests.post(BACKEND_ADDRESS + "/assign_to_region",
                       json={"device_id": id, "region_name": region})
 
 

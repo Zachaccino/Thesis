@@ -273,9 +273,7 @@ class Database:
             line.append(str(t["current_out"]))
             line.append(str(t["voltage_out"]))
             lines.append(line)
-
-        out = open("telemetries.csv", "w+")
-
+            
         for l in lines:
             csv_string += (",".join(l) + "<br>")
         
