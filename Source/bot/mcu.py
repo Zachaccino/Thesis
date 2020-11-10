@@ -3,7 +3,7 @@ import random
 import time
 from threading import Thread
 import os
-from settings import BACKEND_ADDRESS, COUNT
+from settings import BACKEND_ADDRESS, DEV_COUNT, REQ_COUNT
 
 
 # Read IDs
@@ -52,10 +52,11 @@ def send_telemetries(id, current_in, voltage_in, current_out, voltage_out):
 
 # Worker
 def worker(id):
+    time.sleep(random.uniform(0, 1))
     # Register Device
     register_device(id)
     assign_device_to_region(id, id_to_region(id))
-
+    
     # States
     c_in = 5
     v_in = 30
@@ -67,9 +68,17 @@ def worker(id):
     c_out_deviation = deviation()
     v_out_deviation = deviation()
 
+    response_time = []
+
     # Event Loop
-    while True:
-        events_csv = send_telemetries(id, c_in + c_in_deviation, v_in + v_in_deviation, c_out + c_out_deviation, v_out + v_out_deviation).content.decode("utf-8").split(",")
+    count = 0
+    while count < REQ_COUNT:
+        start = time.time()
+        response = send_telemetries(id, c_in + c_in_deviation, v_in + v_in_deviation, c_out + c_out_deviation, v_out + v_out_deviation)
+        end = time.time()
+        response_time.append(round((end - start)*1000,2))
+
+        events_csv = response.content.decode("utf-8").split(",")
         events = []
         i = 0
         code = None
@@ -95,18 +104,28 @@ def worker(id):
         c_out_deviation = deviation()
         v_out_deviation = deviation()
         time.sleep(1)
+        count += 1
+
+    
+    f = open("./results/" + str(id), "w")
+    f.write("Access,Response Time"+"\n")
+    for i, t in enumerate(response_time):
+        f.write(str(i) + "," + str(t) + "\n")
+    
+
 
 workers = []
 
-for i in range(COUNT):
+for i in range(DEV_COUNT):
   t = Thread(target=worker, args=(id_pool[i],))
   t.start()
   workers.append(t)
-  time.sleep(random.uniform(0, 0.5))
   print("Worker " + str(id_pool[i]) +  " spawned at location " + id_to_region(id_pool[i]))
 
 
 for t in workers:
   t.join()
+
+
 
 print("Workers finished.")
