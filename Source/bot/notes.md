@@ -73,3 +73,21 @@ Monitoring - OK
 ## 200 Devices
 Done
 Monitoring - Delayed for 3 Mins
+
+
+# Config
+
+4 Backend
+36 Worker
+
+## 200 Devices
+Done
+Monitoring - OK.
+
+## 500 Devices
+Done
+Monitoring - OK.
+
+## 1000 Devices
+
+Monitoring - 
