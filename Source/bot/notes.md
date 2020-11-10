@@ -63,7 +63,8 @@ Monitoring - Delayed for 1 Mins
 4 Worker
 
 ## 50 Devices
-
+Done
+Monitoring - OK
 
 ## 100 Devices
 Done
