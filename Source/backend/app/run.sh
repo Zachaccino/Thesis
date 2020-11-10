@@ -6,13 +6,5 @@ python executor.py &
 python executor.py &
 python executor.py &
 python executor.py &
-python executor.py &
-python executor.py &
-python executor.py &
-python executor.py &
-python executor.py &
-python executor.py &
-python executor.py &
-python executor.py &
 
-gunicorn -w 12 --threads 12 -b 0.0.0.0:8000 wsgi:app
+gunicorn -w 4 --threads 4 -b 0.0.0.0:8000 wsgi:app

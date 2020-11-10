@@ -120,8 +120,8 @@ for i in range(DEV_COUNT):
   t = Thread(target=worker, args=(id_pool[i],))
   t.start()
   workers.append(t)
-  print("Worker " + str(id_pool[i]) +  " spawned at location " + id_to_region(id_pool[i]))
 
+print("Spawned", DEV_COUNT)
 
 for t in workers:
   t.join()

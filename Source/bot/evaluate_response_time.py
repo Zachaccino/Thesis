@@ -19,7 +19,7 @@ for i in range(DEV_COUNT):
 avg_res = []
 
 for r in res:
-    avg_res.append(sum(r)/len(r))
+    avg_res.append(int(sum(r)/len(r)))
 
 f = open("./graphs/response_time.csv", "w")
 f.write("Access,AVG. Response Time\n")
