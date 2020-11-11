@@ -17,36 +17,12 @@ Governor
 
 Bot
 
-# Config
-
-12 Backend
-12 Worker
-
-## 50 Devices
-Done
-Monitoring - OK
-
-## 100 Devices
-Done
-Monitoring - OK
-
-## 200 Devices
-Done
-Monitoring - Delayed for 1.5 Mins
-
-## 500 Devices
-Done
-Monitoring - Delayed for Minutes.
-
 
 # Config
 
 4 Backend
 12 Worker
-
-## 50 Devices
-Done
-Monitoring - OK
+500 Requests
 
 ## 100 Devices
 Done
@@ -54,13 +30,14 @@ Monitoring - OK
 
 ## 200 Devices
 Done
-Monitoring - Delayed for 1 Mins
+Monitoring - Delayed for 5 Mins from bots terminated to async finishes.
 
 
 # Config
 
 4 Backend
 4 Worker
+500 Requests
 
 ## 50 Devices
 Done
@@ -68,26 +45,25 @@ Monitoring - OK
 
 ## 100 Devices
 Done
-Monitoring - OK
+Monitoring - Delayed for 4 mins from bots terminated to async finishes.
 
 ## 200 Devices
 Done
-Monitoring - Delayed for 3 Mins
+Monitoring - Delayed for 16 mins from bots terminated to async finishes.
 
 
 # Config
 
-4 Backend
-36 Worker
+8 Backend
+24 Worker
+500 Requests
 
 ## 200 Devices
 Done
-Monitoring - OK.
+Monitoring - Ok.
+
 
 ## 500 Devices
 Done
-Monitoring - OK.
-
-## 1000 Devices
-
-Monitoring - 
+Monitoring - Delayed for 10 mins from bots terminated to async finishes.
+Simulators terminated 1 mins later than expected.
