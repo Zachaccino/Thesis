@@ -5,6 +5,7 @@ WORKDIR /usr/src/app
 COPY ./app/conncount.py .
 COPY ./app/database.py .
 COPY ./app/executor.py .
+COPY ./app/executor2.py .
 COPY ./app/server.py .
 COPY ./app/settings.py .
 COPY ./app/worker.py .

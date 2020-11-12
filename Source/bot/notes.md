@@ -76,5 +76,15 @@ Simulators terminated 1 mins later than expected.
 2 Thread for other services
 500 Requests
 
-## 500 Devices
+## 300 500 Devices
+Delayed 1 & couple mins
 
+
+
+# Config
+
+4 Backend
+6 + 8 + 8 = 26 Worker
+2 Redis
+2 Thread for other services
+500 Requests
