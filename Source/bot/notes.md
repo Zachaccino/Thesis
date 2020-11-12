@@ -67,3 +67,14 @@ Monitoring - Ok.
 Done
 Monitoring - Delayed for 10 mins from bots terminated to async finishes.
 Simulators terminated 1 mins later than expected.
+
+
+# Config
+
+4 Backend
+6 + 8 + 8 = 26 Worker
+2 Thread for other services
+500 Requests
+
+## 500 Devices
+

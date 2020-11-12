@@ -11,6 +11,7 @@ from rq import Queue
 from worker import push_event_worker, add_telemetry_worker
 import time
 import pulsar
+from random import randrange
 
 
 app = Flask(__name__)
@@ -23,6 +24,7 @@ db.connect()
 
 # Setting up Redis Async Job Queue.
 q = Queue(connection=Redis(REDIS_ADDRESS, REDIS_PORT))
+q1 = Queue(connection=Redis(REDIS_ADDRESS, REDIS_PORT+1))
 
 # Setting up ConnCount.
 cc = ConnCount(REDIS_ADDRESS, REDIS_PORT)
@@ -108,7 +110,10 @@ def add_telemetry():
     voltage_in = float(request.json['voltage_in'])
     current_out = float(request.json['current_out'])
     voltage_out = float(request.json['voltage_out'])
-    q.enqueue(add_telemetry_worker, args=(device_id, current_in, voltage_in, current_out, voltage_out))
+    if randrange(2) == 0:
+        q.enqueue(add_telemetry_worker, args=(device_id, current_in, voltage_in, current_out, voltage_out))
+    else:
+        q1.enqueue(add_telemetry_worker, args=(device_id, current_in, voltage_in, current_out, voltage_out))
     events = db.serialise_events(device_id)
     return events
 
