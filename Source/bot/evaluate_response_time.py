@@ -8,7 +8,10 @@ res = [[] for _ in range(REQ_COUNT)]
 
 # Return a CSV showing the average response time for each backend access.
 for i in range(DEV_COUNT):
-    f = open("./results/"+id_pool[i], "r")
+    try:
+        f = open("./results/"+id_pool[i], "r")
+    except:
+        continue
     lines = f.readlines()
     f.close()
     lines.pop(0)
