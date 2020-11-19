@@ -44,8 +44,8 @@ def deviation():
     return random.randint(-2, 2) + random.uniform(-0.5, 0.5)
 
 
-def send_telemetries(id, current_in, voltage_in, current_out, voltage_out):
-    r = requests.post(BACKEND_ADDRESS + "/add_telemetry",
+def send_telemetries(sess, id, current_in, voltage_in, current_out, voltage_out):
+    r = sess.post(BACKEND_ADDRESS + "/add_telemetry",
                       json={"device_id": id, "current_in": current_in, "voltage_in": voltage_in, "current_out": current_out, "voltage_out": voltage_out})
     return r
 
@@ -69,42 +69,44 @@ def worker(id):
     v_out_deviation = deviation()
 
     response_time = []
-
+    
     # Event Loop
     count = 0
-    while count < REQ_COUNT:
-        start = time.time()
-        response = send_telemetries(id, c_in + c_in_deviation, v_in + v_in_deviation, c_out + c_out_deviation, v_out + v_out_deviation)
-        end = time.time()
-        response_time.append(round((end - start)*1000,2))
 
-        events_csv = response.content.decode("utf-8").split(",")
-        events = []
-        i = 0
-        code = None
-        value = None
-        while i < len(events_csv):
-            if i % 2 == 0:
-                code = events_csv[i]
-            else:
-                value = float(events_csv[i])
-                events.append((code, value))
-            i += 1
+    with requests.Session() as session:
+        while count < REQ_COUNT:
+            start = time.time()
+            response = send_telemetries(session, id, c_in + c_in_deviation, v_in + v_in_deviation, c_out + c_out_deviation, v_out + v_out_deviation)
+            end = time.time()
+            response_time.append(round((end - start)*1000,2))
 
-        for e in events:
-            if e[0] == "current":
-                c_in = e[1]
-                c_out = e[1] - 1
-            if e[0] == "voltage":
-                v_in = e[1]
-                v_out = e[1] - 1
-        
-        c_in_deviation = deviation()
-        v_in_deviation = deviation()
-        c_out_deviation = deviation()
-        v_out_deviation = deviation()
-        time.sleep(1)
-        count += 1
+            events_csv = response.content.decode("utf-8").split(",")
+            events = []
+            i = 0
+            code = None
+            value = None
+            while i < len(events_csv):
+                if i % 2 == 0:
+                    code = events_csv[i]
+                else:
+                    value = float(events_csv[i])
+                    events.append((code, value))
+                i += 1
+
+            for e in events:
+                if e[0] == "current":
+                    c_in = e[1]
+                    c_out = e[1] - 1
+                if e[0] == "voltage":
+                    v_in = e[1]
+                    v_out = e[1] - 1
+            
+            c_in_deviation = deviation()
+            v_in_deviation = deviation()
+            c_out_deviation = deviation()
+            v_out_deviation = deviation()
+            time.sleep(1)
+            count += 1
 
     
     f = open("./results/" + str(id), "w")

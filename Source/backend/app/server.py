@@ -8,10 +8,11 @@ import os
 from database import Database
 from redis import Redis
 from rq import Queue
-from worker import push_event_worker, add_telemetry_worker
+from worker import push_event_worker, add_telemetry_worker, add_telemetry_worker_batch
 import time
 import pulsar
 from random import randrange
+import threading
 
 
 app = Flask(__name__)
@@ -29,6 +30,31 @@ q1 = Queue(connection=Redis(REDIS_ADDRESS, REDIS_PORT+1))
 # Setting up ConnCount.
 cc = ConnCount(REDIS_ADDRESS, REDIS_PORT)
 cc.connect()
+
+# Periodic Subroutine
+buffer = [[], []]
+buffer_selector = 0
+
+buffer_lock = threading.Lock()
+
+def batch_processor():
+    global buffer_selector
+    while True:
+        time.sleep(1)
+        with buffer_lock:
+            buffer_selector = 0 if buffer_selector else 1
+        if not buffer[buffer_selector]:
+            continue
+        if randrange(2) == 0:
+            q.enqueue(add_telemetry_worker_batch, args=(buffer[buffer_selector],))
+        else:
+            q1.enqueue(add_telemetry_worker_batch, args=(buffer[buffer_selector],))
+        buffer[buffer_selector] = []
+        
+
+processor_thread = threading.Thread(target=batch_processor)
+processor_thread.start()
+
 
 # Generate a random device id.
 def generate_device_id(length=16):
@@ -110,10 +136,9 @@ def add_telemetry():
     voltage_in = float(request.json['voltage_in'])
     current_out = float(request.json['current_out'])
     voltage_out = float(request.json['voltage_out'])
-    if randrange(2) == 0:
-        q.enqueue(add_telemetry_worker, args=(device_id, current_in, voltage_in, current_out, voltage_out))
-    else:
-        q1.enqueue(add_telemetry_worker, args=(device_id, current_in, voltage_in, current_out, voltage_out))
+    sample = [device_id, current_in, voltage_in, current_out, voltage_out]
+    with buffer_lock:
+        buffer[buffer_selector].append(sample)
     events = db.serialise_events(device_id)
     return events
 

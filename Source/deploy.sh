@@ -36,10 +36,11 @@ elif [ $INDEX = "5" ] || [ $INDEX = "9" ]; then
     docker run --detach --name governor governor:1.0
 
 elif [ $INDEX = "6" ] || [ $INDEX = "9" ]; then
-    docker run -it -p 6650:6650 -p 8080:8080 --detach apachepulsar/pulsar:2.6.1 bin/pulsar standalone
+    docker run -it --name=pulsar -p 6650:6650 -p 8080:8080 --detach apachepulsar/pulsar:2.6.1 bin/pulsar standalone
 
 elif [ $INDEX = "7" ] || [ $INDEX = "9" ]; then
-    docker run --name=redis --publish=6379:6379 --hostname=redis --restart=on-failure --detach redis:latest
+    docker run --name=redis0 --publish=6379:6379 --hostname=redis --restart=on-failure --detach redis:latest
+    docker run --name=redis1 --publish=6380:6379 --hostname=redis --restart=on-failure --detach redis:latest
 
 elif [ $INDEX = "8" ] || [ $INDEX = "9" ]; then
     cd ./realtime
@@ -53,9 +54,13 @@ elif [ $INDEX = "10" ]; then
     docker rm --force bot
     docker rm --force governor
     docker rm --force pulsar
-    docker rm --force redis
+    docker rm --force redis0
+    docker rm --force redis1
     docker rm --force realtime
-
+elif [ $INDEX = "11" ]; then
+    docker rm --force mongodb
+    docker rm --force backend
+    docker rm --force realtime
 else
     echo "Index is not valid."
 fi
