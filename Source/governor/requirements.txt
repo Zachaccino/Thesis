@@ -1,0 +1,2 @@
+pymongo==3.10.1
+pulsar-client==2.6.1

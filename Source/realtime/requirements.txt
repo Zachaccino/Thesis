@@ -1,0 +1,4 @@
+aiohttp==3.6.2
+python-socketio==4.6.0
+pulsar-client==2.6.1
+requests==2.24.0

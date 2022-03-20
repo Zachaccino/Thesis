@@ -13,6 +13,9 @@ import { useParams } from "react-router";
 import RemoteServer from './RemoteServer';
 import axios from 'axios';
 import StatusCard from "./StatusCard";
+import openSocket from 'socket.io-client';
+import RemoteSocket from "./RemoteSocket"
+import Link from '@material-ui/core/Link';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -131,6 +134,51 @@ function SwitchControlPanel(name, action, desc, event_code, event_value) {
   )
 }
 
+function DownloadCSV(name, desc, action) {
+  const classes = useStyles();
+  let { panel } = useParams();
+
+  return (
+    <Paper variant="outlined" className={classes.paper}>
+      <Grid
+        container
+        direction="column"
+        justify="center"
+        alignItems="stretch"
+      >
+        <Grid item>
+          <Typography variant="h6" color='textSecondary'>
+            <Box fontWeight="fontWeightBold">
+              {name}
+            </Box>
+          </Typography>
+        </Grid>
+        <Grid item>
+          <Typography variant="subtitle1" color='textSecondary'>
+            <Box fontWeight="fontWeightBold">
+              {desc}
+            </Box>
+          </Typography>
+        </Grid>
+        <Grid item>
+          <Grid
+            container
+            direction="column"
+            justify="center"
+            alignItems="flex-end"
+          >
+            <Grid item>
+              <Link href={RemoteServer()+"/csv/"+panel} color="inherit">
+                {action}
+              </Link>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
+    </Paper>
+  )
+}
+
 function CurrentControlPanel() {
   return (
     SliderControlPanel("Change Current", 5, 1, 0, 15, "current")
@@ -149,140 +197,237 @@ function PowerControlPanel() {
   )
 }
 
+function DownloadCSVPanel() {
+  return (
+    DownloadCSV("Download CSV", "You can download the recorded data in CSV format.", "Download")
+  )
+}
+
 function PanelDetail(props) {
   let { panel } = useParams();
   const [region, setRegion] = useState("Loading");
   const [status, setStatus] = useState("Loading");
-  const [aggregation, setAggregation] = useState(true);
-  const [current, setCurrent] = useState();
-  const [voltage, setVoltage] = useState();
-  const [pwr, setPwr] = useState();
-  const [efficiency, setEfficiency] = useState();
-  const [refreshPeriod, setRefreshPeriod] = useState(1000*10);
 
-  function AggregationSwitch(name, action) {
-    const classes = useStyles();
-    let { panel } = useParams();
-  
-    const toggleAggregationMode = () => {
-      if (aggregation) {
-        setAggregation(false)
-        setRefreshPeriod(1000)
-      } else {
-        setAggregation(true)
-        setRefreshPeriod(1000*10)
-      }
-    }
-  
-    return (
-      <Paper variant="outlined" className={classes.paper}>
-        <Grid
-          container
-          direction="column"
-          justify="center"
-          alignItems="stretch"
-        >
-          <Grid item>
-            <Typography variant="h6" color='textSecondary'>
-              <Box fontWeight="fontWeightBold">
-                Data Aggregation
-              </Box>
-            </Typography>
-          </Grid>
-          <Grid item>
-            <Typography variant="subtitle1" color='textSecondary'>
-              <Box fontWeight="fontWeightBold">
-                Toggle between showing data sampled every second or every minute.
-              </Box>
-            </Typography>
-          </Grid>
-          <Grid item>
-            <Grid
-              container
-              direction="column"
-              justify="center"
-              alignItems="flex-end"
-            >
-              <Grid item>
-                <Button variant="contained" color="primary" onClick={toggleAggregationMode}>
-                  Toggle
-                </Button>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Paper>
-    )
-  }
+  const [realtimeCurrent, setRealtimeCurrent] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [realtimeVoltage, setRealtimeVoltage] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [realtimePwr, setRealtimePwr] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [realtimeEfficiency, setRealtimeEfficiency] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+
+  const [aggregateCurrent, setAggregateCurrent] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [aggregateVoltage, setAggregateVoltage] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [aggregatePwr, setAggregatePwr] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+  const [aggregateEfficiency, setAggregateEfficiency] = useState([{"id": "Input", "data": [], "time": -1}, {"id": "Output", "data": [], "time": -1}]);
+
+  let socket = undefined;
+
+  const [sockID, setSockID] = useState(-1);
 
   useEffect(() => {
-    const fetchData = () => {
-      axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": aggregation})
+    const fetchComPort = () => {
+      axios.get(RemoteServer() + '/request_port')
         .then(res => {
-          setRegion(res.data["Payload"]["region"])
-          setStatus(res.data["Payload"]["status"])
-          setCurrent(res.data["Payload"]["current_graph"])
-          setVoltage(res.data["Payload"]["voltage_graph"])
-          setPwr(res.data["Payload"]["pwr_graph"])
-          setEfficiency(res.data["Payload"]["efficiency_graph"])
+          setSockID((old)=>{
+            console.log("Setting Port " + res.data["sock_id"])
+            return res.data["sock_id"]
+          })
         });
     };
 
-    fetchData();
+    fetchComPort();
+  }, [])
 
-    const interval = setInterval(() => {
-      fetchData();
-    }, refreshPeriod);
+  useEffect(() => {
+    console.log(sockID)
+    // Don't do anything since the port is not available.
+    if (sockID === -1) {
+      console.log("Port not available.")
+    } else {
+      console.log("Listening Socket " + sockID)
+      const fetchRealtimeData = () => {
+        axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": false})
+          .then(res => {
+            res.data["Payload"]["current_graph"][0].time = -1
+            res.data["Payload"]["current_graph"][1].time = -1
+            res.data["Payload"]["voltage_graph"][0].time = -1
+            res.data["Payload"]["voltage_graph"][1].time = -1
+            res.data["Payload"]["pwr_graph"][0].time = -1
+            res.data["Payload"]["pwr_graph"][1].time = -1
+            res.data["Payload"]["efficiency_graph"][0].time = -1
+            setRegion(res.data["Payload"]["region"])
+            setStatus(res.data["Payload"]["status"])
+            setRealtimeCurrent(res.data["Payload"]["current_graph"])
+            setRealtimeVoltage(res.data["Payload"]["voltage_graph"])
+            setRealtimePwr(res.data["Payload"]["pwr_graph"])
+            setRealtimeEfficiency(res.data["Payload"]["efficiency_graph"])
+          });
+      };
 
-    return () => clearInterval(interval);
-  }, [aggregation, refreshPeriod]);
+      const fetchAggregateData = () => {
+        axios.post(RemoteServer() + '/panel_detail', { "device_id": panel, "aggregation": true})
+          .then(res => {
+            res.data["Payload"]["current_graph"][0].time = -1
+            res.data["Payload"]["current_graph"][1].time = -1
+            res.data["Payload"]["voltage_graph"][0].time = -1
+            res.data["Payload"]["voltage_graph"][1].time = -1
+            res.data["Payload"]["pwr_graph"][0].time = -1
+            res.data["Payload"]["pwr_graph"][1].time = -1
+            res.data["Payload"]["efficiency_graph"][0].time = -1
+            setRegion(res.data["Payload"]["region"])
+            setStatus(res.data["Payload"]["status"])
+            setAggregateCurrent(res.data["Payload"]["current_graph"])
+            setAggregateVoltage(res.data["Payload"]["voltage_graph"])
+            setAggregatePwr(res.data["Payload"]["pwr_graph"])
+            setAggregateEfficiency(res.data["Payload"]["efficiency_graph"])
+          });
+      };
+
+      // Preload Graph Data.
+      fetchRealtimeData();
+      fetchAggregateData();
+
+      // Provide the telemetry (A list). 
+      // An element to be added (A data point).
+      // index of 0 is INPUT, index of 1 is OUTPUT.
+      const shiftAddTelemetryStacked = (oldList, inputElem, outputElem, timestamp) => {
+        if (timestamp === oldList[0].time) {
+          return oldList
+        }
+        let list = oldList.slice(0)
+        for (let i = 0; i < list[0]["data"].length - 1; i++) {
+          list[0]["data"][i]["y"] = list[0]["data"][i+1]["y"]
+          list[1]["data"][i]["y"] = list[1]["data"][i+1]["y"]
+        }
+        if (list[0]["data"].length !== 0) {
+          list[0]["data"][list[0]["data"].length - 1]["y"] = inputElem
+          list[1]["data"][list[1]["data"].length - 1]["y"] = outputElem
+        }
+        list[0].time = timestamp
+        list[1].time = timestamp
+        return list
+      };
+
+      const shiftAddTelemetry = (oldList, elem, timestamp) => {
+        if (timestamp === oldList[0].time) {
+          return oldList
+        }
+        let list = oldList.slice(0)
+        for (let i = 0; i < list[0]["data"].length - 1; i++) {
+          list[0]["data"][i]["y"] = list[0]["data"][i+1]["y"]
+        }
+        if (list[0]["data"].length !== 0) {
+          list[0]["data"][list[0]["data"].length - 1]["y"] = elem
+        } 
+        list[0].time = timestamp
+        return list
+      };
+
+      socket = openSocket(RemoteSocket() + (sockID + 5000));
+
+      // Update Graph Data.
+      socket.emit('frontend_connect', {'content': panel})
+
+      socket.on('aggregate_update', (data) => {
+        setAggregateCurrent(oldTele => {
+          return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"], data["TIME"])
+        })
+        setAggregateVoltage(oldTele => {
+          return shiftAddTelemetryStacked(oldTele, data["VOLTAGE_IN"], data["VOLTAGE_OUT"], data["TIME"])
+        })
+        setAggregatePwr(oldTele => {
+          return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"], data["TIME"])
+        })
+        setAggregateEfficiency(oldTele => {
+          return shiftAddTelemetry(oldTele, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100, data["TIME"])
+        })
+      });
+
+      socket.on('realtime_update', (data) => {
+        setRealtimeCurrent(oldTele => {
+          return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"], data["CURRENT_OUT"], data["TIME"])
+        })
+        
+        setRealtimeVoltage(oldTele => {
+          return shiftAddTelemetryStacked(oldTele, data["VOLTAGE_IN"], data["VOLTAGE_OUT"], data["TIME"])
+        })
+
+        setRealtimePwr(oldTele => {
+          return shiftAddTelemetryStacked(oldTele, data["CURRENT_IN"] * data["VOLTAGE_IN"], data["CURRENT_OUT"] * data["VOLTAGE_OUT"], data["TIME"])
+        })
+
+        setRealtimeEfficiency(oldTele => {
+          return shiftAddTelemetry(oldTele, (data["CURRENT_OUT"] * data["VOLTAGE_OUT"]) / (data["CURRENT_IN"] * data["VOLTAGE_IN"]+0.00001) * 100, data["TIME"])
+        })
+      });
+    }
+
+  }, [sockID]);
 
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <ContentTitle title={"Device Information"} />
+    <React.Fragment>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <ContentTitle title={"Device Information"} />
+        </Grid>
+        <Grid item xs={4}>
+          <StatusCard title="Device ID" value={panel} />
+        </Grid>
+        <Grid item xs={4}>
+          <StatusCard title="Region" value={region} />
+        </Grid>
+        <Grid item xs={4}>
+          <StatusCard title="Status" value={status} />
+        </Grid>
+        <Grid item xs={4}>
+          <StatusCard title="Listening Port" value={sockID} />
+        </Grid>
+        <Grid item xs={12}>
+          <ContentTitle title={"Aggregate Statistics"} />
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Current (Last 4 Hrs)" data={aggregateCurrent} max={25} yLabel={"Current (A)"} legend={"Time"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Voltage (Last 4 Hrs)" data={aggregateVoltage} max={35} yLabel={"Voltage (V)"} legend={"Time"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Power (Last 4 Hrs)" data={aggregatePwr} max={260} yLabel={"Power (watt)"} legend={"Time"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Efficiency (Last 4 Hrs)" data={aggregateEfficiency} max={100} yLabel={"Percentage"} legend={"Time"}/>
+        </Grid>
+        <Grid item xs={12}>
+          <ContentTitle title={"Realtime Statistics"} />
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Current (Current Session)" data={realtimeCurrent} max={25} yLabel={"Current (A)"} legend={"Recorded Sample"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Voltage (Current Session)" data={realtimeVoltage} max={35} yLabel={"Voltage (V)"} legend={"Recorded Sample"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Power (Current Session)" data={realtimePwr} max={260} yLabel={"Power (watt)"} legend={"Recorded Sample"}/>
+        </Grid>
+        <Grid item xs={6}>
+          <TrendCard title="Efficiency (Current Session)" data={realtimeEfficiency} max={100} yLabel={"Percentage"} legend={"Recorded Sample"}/>
+        </Grid>
+        <Grid item xs={12}>
+          <ContentTitle title={"Control Panel"} />
+        </Grid>
+        <Grid item xs={6}>
+          <CurrentControlPanel />
+        </Grid>
+        <Grid item xs={6}>
+          <VoltageControlPanel />
+        </Grid>
+        <Grid item xs={12}>
+          <PowerControlPanel />
+        </Grid>
+        <Grid item xs={12}>
+          <DownloadCSVPanel />
+        </Grid>
       </Grid>
-      <Grid item xs={4}>
-        <StatusCard title="Device ID" value={panel} />
-      </Grid>
-      <Grid item xs={4}>
-        <StatusCard title="Region" value={region} />
-      </Grid>
-      <Grid item xs={4}>
-        <StatusCard title="Status" value={status} />
-      </Grid>
-      <Grid item xs={12}>
-        <ContentTitle title={"Statistics"} />
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Current" data={current} max={10} yLabel={"Current (A)"} />
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Voltage" data={voltage} max={35} yLabel={"Voltage (V)"} />
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Power" data={pwr} max={260} yLabel={"Power (watt)"} />
-      </Grid>
-      <Grid item xs={6}>
-        <TrendCard title="Efficiency" data={efficiency} max={100} yLabel={"Percentage"} />
-      </Grid>
-      <Grid item xs={12}>
-        <ContentTitle title={"Control Panel"} />
-      </Grid>
-      <Grid item xs={6}>
-        <CurrentControlPanel />
-      </Grid>
-      <Grid item xs={6}>
-        <VoltageControlPanel />
-      </Grid>
-      <Grid item xs={12}>
-        <PowerControlPanel />
-      </Grid>
-      <Grid item xs={12}>
-        <AggregationSwitch />
-      </Grid>
-    </Grid>
+    </React.Fragment>
   )
 }
 

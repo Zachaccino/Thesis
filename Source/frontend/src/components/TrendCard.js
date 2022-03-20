@@ -15,18 +15,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function GraphLoader(props) {
-  if (typeof props.data === 'undefined') {
-    return (
-      <LinearProgress />
-    )
-  } else {
-    return (
-      <LineGraph data={props.data} max={props.max} yLabel={props.yLabel}/>
-    )
-  }
-}
-
 
 function TrendCard(props) {
   const classes = useStyles();
@@ -46,7 +34,7 @@ function TrendCard(props) {
           </Typography>
         </Grid>
         <Grid item>
-          <GraphLoader data={props.data} max={props.max} yLabel={props.yLabel}/>
+        <LineGraph data={props.data} max={props.max} yLabel={props.yLabel} legend={props.legend} />
         </Grid>
       </Grid>
     </Paper>

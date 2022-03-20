@@ -1,27 +1,59 @@
+from settings import DB_ADDRESS, DB_USERNAME, DB_PASSWORD, REDIS_ADDRESS, REDIS_PORT
+from conncount import ConnCount
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import random
 import string
 import os
 from database import Database
+from redis import Redis
+from rq import Queue
+from worker import push_event_worker, add_telemetry_worker, add_telemetry_worker_batch
+import time
+import pulsar
+from random import randrange
+import threading
 
 
 app = Flask(__name__)
 CORS(app)
 
 
-# Setting Switch
-deploy = True
-development_address = "127.0.0.1"
-deployment_address = "3.24.141.26"
-server_address = deployment_address if deploy else development_address
-
-
-# Setting up DB.
-db_address = 'mongodb://' + server_address + ':27017/'
-db = Database(db_address, "hyperlynk", "OnePurpleParrot")
+# Setting up Mongo DB.
+db = Database(DB_ADDRESS, DB_USERNAME, DB_PASSWORD)
 db.connect()
-db.init()
+
+# Setting up Redis Async Job Queue.
+q = Queue(connection=Redis(REDIS_ADDRESS, REDIS_PORT))
+q1 = Queue(connection=Redis(REDIS_ADDRESS, REDIS_PORT+1))
+
+# Setting up ConnCount.
+cc = ConnCount(REDIS_ADDRESS, REDIS_PORT)
+cc.connect()
+
+# Periodic Subroutine
+buffer = [[], []]
+buffer_selector = 0
+
+buffer_lock = threading.Lock()
+
+def batch_processor():
+    global buffer_selector
+    while True:
+        time.sleep(1)
+        with buffer_lock:
+            buffer_selector = 0 if buffer_selector else 1
+        if not buffer[buffer_selector]:
+            continue
+        if randrange(2) == 0:
+            q.enqueue(add_telemetry_worker_batch, args=(buffer[buffer_selector],))
+        else:
+            q1.enqueue(add_telemetry_worker_batch, args=(buffer[buffer_selector],))
+        buffer[buffer_selector] = []
+        
+
+processor_thread = threading.Thread(target=batch_processor)
+processor_thread.start()
 
 
 # Generate a random device id.
@@ -92,12 +124,8 @@ def push_event():
     device_id = request.json['device_id']
     event_code = request.json['event_code']
     event_value = float(request.json['event_value'])
-
-    if not db.device_exist(device_id):
-        return "Failed. Device not exists."
-
-    db.insert_event(device_id, event_code, event_value)
-    return "Successfuly added."
+    q.enqueue(push_event_worker, args=(device_id, event_code, event_value))
+    return "OK"
 
 
 # Telemetry
@@ -108,12 +136,11 @@ def add_telemetry():
     voltage_in = float(request.json['voltage_in'])
     current_out = float(request.json['current_out'])
     voltage_out = float(request.json['voltage_out'])
-
-    if not db.device_exist(device_id):
-        return ""
-    
-    db.insert_telemetry(device_id, current_in, voltage_in, current_out, voltage_out)
-    return db.serialise_events(device_id)
+    sample = [device_id, current_in, voltage_in, current_out, voltage_out]
+    with buffer_lock:
+        buffer[buffer_selector].append(sample)
+    events = db.serialise_events(device_id)
+    return events
 
 
 # Device Management
@@ -160,13 +187,49 @@ def assign_to_region():
 @ app.route('/register_region', methods=['POST'])
 def register_region():
     region_name = request.json['region_name']
-    print(region_name)
-
     if not db.region_exist(region_name):
         db.insert_region(region_name)
         return response('Region successfully added.')
 
     return response('Region name already exists.')
+
+
+@ app.route('/sync_conncount', methods=['POST'])
+def sync_conncount():
+    # Sock_ID should be an integer.
+    sock_id = request.json['sock_id']
+    # Count is also an integer.
+    count = request.json['count']
+    print("SOCKID ", sock_id)
+    print("COUNT ", count)
+    # However, json key must be string, so we must convert it from int to str.
+    cc.put(str(sock_id), count)
+    return "OK"
+
+
+@ app.route('/request_port', methods=['GET'])
+def request_port():
+    best_sock = None
+    conncount = cc.get_all()
+    print(conncount)
+    for sock_id in conncount:
+        if not best_sock:
+            best_sock = sock_id
+        elif conncount[sock_id]["value"] < conncount[best_sock]["value"]:
+            best_sock = sock_id
+    
+    # Hardcoding, Since Redis seems to evict the key on low memory.
+    if not best_sock:
+        cc.put("0", 0)
+        cc.put("1", 0)
+        return {"sock_id": 0, "DEBUG": conncount}
+
+    return {"sock_id": int(best_sock), "DEBUG": conncount}
+
+
+@ app.route('/csv/<device_id>', methods=['GET'])
+def csv(device_id):
+    return db.to_csv(device_id)
 
 
 if __name__ == '__main__':

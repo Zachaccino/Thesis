@@ -1,0 +1,6 @@
+rq
+pymongo
+pulsar-client
+flask
+flask_cors
+gunicorn

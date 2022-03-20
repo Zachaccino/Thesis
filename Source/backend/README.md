@@ -1,27 +1,47 @@
-# Containers Used
+# Backend
 
-The following is a list of containers used in the backend. They needs to be
-composed together with the backend container.
-
-1. `mysql`
+This is a backend server.
 
 
-# Useful Commands
+# Dependencies
 
-## MySQL
+Dependencies are specified in the `requirements.txt`. You can install the dependencies through the following command.
 
-Installation: `docker pull mysql:5.7`
-
-Running `mysql` in detach mode: `docker run -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456789 -e MYSQL_DATABASE=BackendDB -d --name BackendDB mysql:5.7`
-
-Viewing `mysql` logs: `docker logs BackendDB`
+```
+pip3 install -r requirements.txt
+```
 
 
-## Gunicorn
+# Structure
 
-Running the app `gunicorn -w 2 --threads 2 -b 0.0.0.0:8080 wsgi:app`
+The program is inside the `./app` folder and supporting documents are under this directory.
 
 
-## My App
+# Settings
 
-Runnign the app `docker run -p 8000:8080 --detach --name backend backend:1.0`
+The configurable settings are placed in the `settings.py`.
+
+
+# For Development
+
+You can run this program by using.
+
+```
+cd app
+python3 server.py
+```
+
+Please make sure your `DEVELOPMENT_ADDRESS` inside `settings.py` is configured properly and the `DEPLOY` is set to `False`.
+
+
+# For Deployment to Docker
+
+This program is designed to run inside the docker container. Please make sure your `SERVER_ADDRESS` inside `settings.py` is configured properly and the `DEPLOY` is set to `True`.
+
+You need to build the image first.
+
+`PLACEHOLDER`
+
+Then, you can run it inside Docker.
+
+`PLACEHOLDER`

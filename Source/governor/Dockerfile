@@ -1,13 +1,16 @@
-FROM python:3
-
-ARG server_address
-ENV SERVER_ADDRESS=server_address
+FROM python:3.8
 
 WORKDIR /usr/src/app
 
-COPY ./run.py .
+COPY ./aggregate.py . 
+COPY ./liveness.py .
+COPY ./settings.py .
 
-RUN pip install pymongo
-RUN pip install pyOWM
+COPY ./run.sh .
 
-CMD [ "python", "./run.py" ]
+COPY ./requirements.txt .
+
+RUN chmod +x ./run.sh
+RUN pip install -r requirements.txt
+
+CMD [ "./run.sh" ]
